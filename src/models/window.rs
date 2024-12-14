@@ -3,23 +3,21 @@ use anyhow::Result;
 /// The height of the window decoration that is constant in Ubuntu.
 pub const WINDOW_DECORATION: i32 = 24;
 
-/// # Window Model
-///
-/// Models the attributes of a single window (on a monitor, in a workspace, in the workspace grid).
+/// Models the attributes of a single window (on a monitor, in a Workspace, in the WorkspaceGrid).
 /// Specifically, it cares about things like where the window is positioned relative to the current
-/// workspace (i.e. x and y offset) as well as the ID/title of the window.
+/// Workspace (i.e. x and y offset) as well as the ID/title of the window.
 ///
-/// ## Fields
+/// Fields:
 ///
 /// - id: An integer representation of the window's ID (normally in hex).
 /// - x_offset and y_offset:
-///     - x and y offset are how windows (specifically, their top-left corner, not including window decoration)
-///         are positioned relative to the current workspace. Some examples (given a triple 1080p monitor setup):
-///     - An x,y offset of 0,0 would put the window on the left-most monitor.
-///     - An x,y offset of 0,24 also puts the window on the left-most monitor,
-///         but the y-offset has accounted for window decoration (this is what's most commonly seen).
-///     - An x,y offset of 1920,24 puts the window in the center monitor, because it is positioned 1920 pixels
-///         from the left-most edge of the workspace.
+///     x and y offset are how windows (specifically, their top-left corner, not including window decoration)
+///     are positioned relative to the current workspace. Some examples (given a triple 1080p monitor setup):
+///         - An x,y offset of 0,0 would put the window on the left-most monitor.
+///         - An x,y offset of 0,24 also puts the window on the left-most monitor,
+///             but the y-offset has accounted for window decoration (this is what's most commonly seen).
+///         - An x,y offset of 1920,24 puts the window in the center monitor, because it is positioned 1920 pixels
+///             from the left-most edge of the workspace.
 /// - height: The height of the window (in pixels).
 /// - width: The width of the window (in pixels).
 /// - window_class: The class of the window (e.g. "google-chrome.Google-chrome")
