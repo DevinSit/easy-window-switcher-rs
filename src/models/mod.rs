@@ -1,7 +1,7 @@
 mod window;
-mod workspace;
 mod workspace_grid;
+mod workspace_position;
 
 pub use window::*;
-pub use workspace::*;
 pub use workspace_grid::*;
+pub use workspace_position::*;

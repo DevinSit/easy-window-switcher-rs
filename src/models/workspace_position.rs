@@ -27,34 +27,29 @@
 /// We need to know what the coordinates are of a Workspace since the positions of Windows within the WorkspaceGrid are relative to the entire plane,
 /// _not_ relative to the current Workspace (i.e. a window with coordinates of (7680, 0) is on the second Workspace, middle monitor assuming the example grid above).
 #[derive(Debug)]
-pub struct Workspace {
+pub struct WorkspacePosition {
     x: i32,
     y: i32,
 }
 
-impl Workspace {
+impl WorkspacePosition {
     /// Creates a new `Workspace` with the given dimensions.
     fn new(x: i32, y: i32) -> Self {
-        Workspace { x, y }
+        WorkspacePosition { x, y }
     }
 
     /// Creates a new `Workspace` from a raw configuration string, e.g. "1920,1080".
-    fn from_raw_config(raw_dimensions: &str) -> Self {
-        let split_dimensions = parse_dimensions(raw_dimensions);
+    fn from_string_position(string_position: &str) -> Self {
+        let split_dimensions: Vec<i32> = string_position
+            .split(',')
+            .map(|s| s.trim().parse::<i32>().unwrap())
+            .collect();
 
-        Workspace {
+        WorkspacePosition {
             x: split_dimensions[0],
             y: split_dimensions[1],
         }
     }
-}
-
-/// Helper function to parse dimensions from a string.
-fn parse_dimensions(raw_dimensions: &str) -> Vec<i32> {
-    raw_dimensions
-        .split(',')
-        .map(|s| s.trim().parse::<i32>().unwrap())
-        .collect()
 }
 
 #[cfg(test)]
@@ -63,14 +58,14 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let workspace = Workspace::new(1920, 1080);
+        let workspace = WorkspacePosition::new(1920, 1080);
         assert_eq!(workspace.x, 1920);
         assert_eq!(workspace.y, 1080);
     }
 
     #[test]
     fn test_from_raw_config() {
-        let workspace = Workspace::from_raw_config("1920,1080");
+        let workspace = WorkspacePosition::from_string_position("1920,1080");
         assert_eq!(workspace.x, 1920);
         assert_eq!(workspace.y, 1080);
     }
