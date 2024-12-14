@@ -1,25 +1,27 @@
-/// Models the attributes (specifically, dimensions) of a single monitor.
-/// Many Monitors form a MonitorGrid.
+/// Models the attributes (specifically, dimensions) of a single Workspace.
+/// Many Workspaces form a WorkspaceGrid.
 ///
-/// Note that Monitor dimensions represent the top-leftmost pixel of a monitor.
-/// e.g. 0,0 is the first monitor, 3840,0 is the second monitor for 3 1920x1080 monitors, etc.
+/// Note that Workspace dimensions represent the top-leftmost pixel of a workspace.
+/// e.g. in a 3x3 grid with 3 1920x1080 monitors:
+/// - 0,0 is the first workspace,
+/// - 5760,0 is the second workspace, etc
 #[derive(Debug)]
-pub struct Monitor {
+pub struct Workspace {
     width: i32,
     height: i32,
 }
 
-impl Monitor {
-    /// Creates a new `Monitor` with the given dimensions.
+impl Workspace {
+    /// Creates a new `Workspace` with the given dimensions.
     fn new(width: i32, height: i32) -> Self {
-        Monitor { width, height }
+        Workspace { width, height }
     }
 
-    /// Creates a new `Monitor` from a raw configuration string, e.g. "1920,1080".
+    /// Creates a new `Workspace` from a raw configuration string, e.g. "1920,1080".
     fn from_raw_config(raw_dimensions: &str) -> Self {
         let split_dimensions = parse_dimensions(raw_dimensions);
 
-        Monitor {
+        Workspace {
             width: split_dimensions[0],
             height: split_dimensions[1],
         }
@@ -34,23 +36,22 @@ fn parse_dimensions(raw_dimensions: &str) -> Vec<i32> {
         .collect()
 }
 
-// src/models/monitor.rs
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_new() {
-        let monitor = Monitor::new(1920, 1080);
-        assert_eq!(monitor.width, 1920);
-        assert_eq!(monitor.height, 1080);
+        let workspace = Workspace::new(1920, 1080);
+        assert_eq!(workspace.width, 1920);
+        assert_eq!(workspace.height, 1080);
     }
 
     #[test]
     fn test_from_raw_config() {
-        let monitor = Monitor::from_raw_config("1920,1080");
-        assert_eq!(monitor.width, 1920);
-        assert_eq!(monitor.height, 1080);
+        let workspace = Workspace::from_raw_config("1920,1080");
+        assert_eq!(workspace.width, 1920);
+        assert_eq!(workspace.height, 1080);
     }
 
     #[test]
