@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = { version = "1.0.94", features = ["backtrace"] }
 clap = { version = "4.5.23", features = ["derive"] }
 clap_derive = "4.5.18"
+derive_builder = "0.20.2"
 dotenvy = "0.15.7"
 env_logger = "0.11.5"
 log = "0.4.22"
