@@ -28,21 +28,21 @@
 /// _not_ relative to the current Workspace (i.e. a window with coordinates of (7680, 0) is on the second Workspace, middle monitor assuming the example grid above).
 #[derive(Debug)]
 pub struct WorkspacePosition {
-    x: i32,
-    y: i32,
+    pub x: usize,
+    pub y: usize,
 }
 
 impl WorkspacePosition {
     /// Creates a new `Workspace` with the given dimensions.
-    fn new(x: i32, y: i32) -> Self {
+    fn new(x: usize, y: usize) -> Self {
         WorkspacePosition { x, y }
     }
 
     /// Creates a new `Workspace` from a raw configuration string, e.g. "1920,1080".
     fn from_string_position(string_position: &str) -> Self {
-        let split_dimensions: Vec<i32> = string_position
+        let split_dimensions: Vec<usize> = string_position
             .split(',')
-            .map(|s| s.trim().parse::<i32>().unwrap())
+            .map(|s| s.trim().parse::<usize>().unwrap())
             .collect();
 
         WorkspacePosition {
