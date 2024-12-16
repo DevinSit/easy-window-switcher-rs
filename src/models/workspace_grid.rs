@@ -1,4 +1,4 @@
-use super::{monitor::Monitor, WorkspacePosition};
+use super::{Monitor, WorkspacePosition};
 
 /// These are assumptions about how the user's workspaces are setup (based on their monitors).
 ///
@@ -28,8 +28,8 @@ type WorkspaceIndices = Vec<Vec<usize>>;
 #[rustfmt::skip] // Note: Ignore rustfmt so that we can better visually see the monitor arrangement.
 const MONITOR_ARRANGEMENT: &[&[Monitor]] =
     &[
-        &[Monitor {width: 1920, height: 1080},
-          Monitor {width: 1920, height: 1080}], &[Monitor {width: 3440, height: 1080}], &[Monitor {width: 1440, height: 2560}]
+        &[Monitor::new(1920, 1080),
+          Monitor::new(1920, 1080)], &[Monitor::new(3440, 1440)], &[Monitor::new(1440, 2560)]
     ];
 
 const GRID_ROWS_COUNT: usize = 3;
@@ -154,24 +154,9 @@ mod tests {
         #[test]
         fn test_my_arrangement() {
             let monitor_arrangement = vec![
-                vec![
-                    Monitor {
-                        width: 1920,
-                        height: 1080,
-                    },
-                    Monitor {
-                        width: 1920,
-                        height: 1080,
-                    },
-                ],
-                vec![Monitor {
-                    width: 3440,
-                    height: 1440,
-                }],
-                vec![Monitor {
-                    width: 1440,
-                    height: 2560,
-                }],
+                vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
+                vec![Monitor::new(3440, 1440)],
+                vec![Monitor::new(1440, 2560)],
             ];
 
             let (workspace_width, workspace_height) =
@@ -184,18 +169,9 @@ mod tests {
         #[test]
         fn test_different_arrangement() {
             let monitor_arrangement = vec![
-                vec![Monitor {
-                    width: 1920,
-                    height: 1080,
-                }],
-                vec![Monitor {
-                    width: 1440,
-                    height: 3440,
-                }],
-                vec![Monitor {
-                    width: 1440,
-                    height: 2560,
-                }],
+                vec![Monitor::new(1920, 1080)],
+                vec![Monitor::new(1440, 3440)],
+                vec![Monitor::new(1440, 2560)],
             ];
 
             let (workspace_width, workspace_height) =
@@ -207,10 +183,7 @@ mod tests {
 
         #[test]
         fn test_single_monitor() {
-            let monitor_arrangement = vec![vec![Monitor {
-                width: 1920,
-                height: 1080,
-            }]];
+            let monitor_arrangement = vec![vec![Monitor::new(1920, 1080)]];
 
             let (workspace_width, workspace_height) =
                 WorkspaceGrid::calculate_workspace_size(&monitor_arrangement);

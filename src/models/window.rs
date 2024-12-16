@@ -22,7 +22,7 @@ pub const WINDOW_DECORATION: i32 = 24;
 /// - width: The width of the window (in pixels).
 /// - window_class: The class of the window (e.g. "google-chrome.Google-chrome")
 /// - title: The title of the window.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Window {
     pub id: u64,
     pub x_offset: i32,
