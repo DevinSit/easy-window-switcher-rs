@@ -1,3 +1,4 @@
+mod monitor;
 mod window;
 mod workspace_grid;
 mod workspace_position;

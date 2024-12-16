@@ -1,6 +1,4 @@
-use derive_builder::Builder;
-
-use super::{Window, WorkspacePosition};
+use super::{monitor::Monitor, WorkspacePosition};
 
 /// These are assumptions about how the user's workspaces are setup (based on their monitors).
 ///
@@ -23,12 +21,6 @@ use super::{Window, WorkspacePosition};
 /// WORKSPACE_HEIGHT = 2560 (aka the max height of all the monitors)
 /// WORKSPACE_WIDTH = 1920 + 3440 + 1440
 
-#[derive(Clone, Debug)]
-struct Monitor {
-    width: usize,
-    height: usize,
-}
-
 type MonitorArrangement = Vec<Vec<Monitor>>;
 type WorkspaceIndices = Vec<Vec<usize>>;
 
@@ -43,8 +35,7 @@ const MONITOR_ARRANGEMENT: &[&[Monitor]] =
 const GRID_ROWS_COUNT: usize = 3;
 const GRID_COLUMNS_COUNT: usize = 3;
 
-#[derive(Builder, Clone, Debug, Default)]
-#[builder(default)]
+#[derive(Clone, Debug, Default)]
 pub struct WorkspaceGrid {
     width: usize,  // pixels
     height: usize, // pixels
