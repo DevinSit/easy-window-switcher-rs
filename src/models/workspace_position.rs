@@ -34,12 +34,12 @@ pub struct WorkspacePosition {
 
 impl WorkspacePosition {
     /// Creates a new `Workspace` with the given dimensions.
-    fn new(x: usize, y: usize) -> Self {
+    pub fn new(x: usize, y: usize) -> Self {
         WorkspacePosition { x, y }
     }
 
     /// Creates a new `Workspace` from a raw configuration string, e.g. "1920,1080".
-    fn from_string_position(string_position: &str) -> Self {
+    pub fn from_string_position(string_position: &str) -> Self {
         let split_dimensions: Vec<usize> = string_position
             .split(',')
             .map(|s| s.trim().parse::<usize>().unwrap())

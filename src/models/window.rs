@@ -24,13 +24,13 @@ pub const WINDOW_DECORATION: i32 = 24;
 /// - title: The title of the window.
 #[derive(Debug)]
 pub struct Window {
-    id: u64,
-    x_offset: i32,
-    y_offset: i32,
-    width: i32,
-    height: i32,
-    window_class: String,
-    title: String,
+    pub id: u64,
+    pub x_offset: i32,
+    pub y_offset: i32,
+    pub width: i32,
+    pub height: i32,
+    pub window_class: String,
+    pub title: String,
 }
 
 impl Window {

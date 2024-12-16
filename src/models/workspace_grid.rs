@@ -72,6 +72,16 @@ impl WorkspaceGrid {
         }
     }
 
+    pub fn from_string_dimensions(string_dimensions: &str) -> Self {
+        let grid_dimensions = string_dimensions
+            .trim()
+            .split("x")
+            .map(|s| s.parse::<usize>().unwrap())
+            .collect::<Vec<usize>>();
+
+        WorkspaceGrid::new(grid_dimensions[0], grid_dimensions[1])
+    }
+
     pub fn get_workspace_index(&self, workspace_position: WorkspacePosition) -> usize {
         WorkspaceGrid::calculate_workspace_index(
             &self.workspace_indices,
