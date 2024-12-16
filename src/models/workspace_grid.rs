@@ -1,5 +1,7 @@
 use super::{Monitor, WorkspacePosition};
 
+// TODO: Rewrite this comment.
+
 /// These are assumptions about how the user's workspaces are setup (based on their monitors).
 ///
 /// For example, three horizontally-aligned 1920x1080 monitors would have a single workspace dimension of:
@@ -37,8 +39,8 @@ const GRID_COLUMNS_COUNT: usize = 3;
 
 #[derive(Clone, Debug, Default)]
 pub struct WorkspaceGrid {
-    width: usize,  // pixels
-    height: usize, // pixels
+    pub width: usize,  // pixels
+    pub height: usize, // pixels
     rows_count: usize,
     columns_count: usize,
     monitor_arrangement: MonitorArrangement,
