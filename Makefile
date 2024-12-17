@@ -7,7 +7,7 @@ test:
 	cargo test
 
 build:
-	cargo build --release --bin covered-calls-bot
+	cargo build --release
 
 release:
 	cp target/release/easy-window-switcher-rs ~/bin
