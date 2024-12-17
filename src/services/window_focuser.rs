@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::collections::HashMap;
 
 use crate::external_tools::{wmctrl, xdotool};
@@ -6,21 +7,25 @@ use crate::models::{Window, WINDOW_DECORATION};
 // TODO: Derive this from monitor arrangement.
 const NUMBER_OF_MONITORS: i32 = 4;
 
-pub fn focus_by_monitor_index(index: usize) {
+pub fn focus_by_direction(direction: &str) -> Result<()> {
+    let windows = &get_current_workspace_windows();
+
+    if let Some(window_to_focus) = get_closest_window(windows, direction) {
+        wmctrl::focus_window_by_id(window_to_focus.id);
+    }
+
+    Ok(())
+}
+
+pub fn focus_by_monitor_index(index: usize) -> Result<()> {
     let windows = get_current_workspace_windows();
     let windows_by_monitor_index = index_windows_by_monitor(&windows);
 
     if windows_by_monitor_index.len() > index {
         wmctrl::focus_window_by_id(windows_by_monitor_index[&index][0].id);
     }
-}
 
-pub fn focus_by_direction(direction: &str) {
-    let windows = &get_current_workspace_windows();
-
-    if let Some(window_to_focus) = get_closest_window(windows, direction) {
-        wmctrl::focus_window_by_id(window_to_focus.id);
-    }
+    Ok(())
 }
 
 fn get_current_workspace_windows() -> Vec<Window> {

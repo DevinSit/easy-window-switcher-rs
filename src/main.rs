@@ -1,5 +1,10 @@
-use easy_window_switcher_rs::services::window_focuser;
+use anyhow::Result;
 
-fn main() {
-    window_focuser::focus_by_direction("right");
+use easy_window_switcher_rs::cli;
+
+fn main() -> Result<()> {
+    dotenvy::dotenv().ok();
+    env_logger::init();
+
+    cli::run()
 }
