@@ -61,8 +61,7 @@ fn index_monitors_by_window(windows: &Vec<Window>) -> HashMap<usize, usize> {
     let mut monitors_by_window: HashMap<usize, usize> = HashMap::new();
 
     for window in windows {
-        let monitor_index = determine_which_monitor_window_is_on(window);
-        monitors_by_window.insert(window.id, monitor_index);
+        monitors_by_window.insert(window.id, determine_which_monitor_window_is_on(window));
     }
 
     monitors_by_window
@@ -194,4 +193,50 @@ fn next_monitor(current_monitor: i32, direction: i32) -> i32 {
     //
     // Ref: https://stackoverflow.com/q/31210357
     (((current_monitor + direction) % NUMBER_OF_MONITORS) + NUMBER_OF_MONITORS) % NUMBER_OF_MONITORS
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod determine_which_monitor_window_is_on {
+        use super::*;
+
+        fn create_window(x_offset: i32, y_offset: i32) -> Window {
+            // Only values that matter are the offsets; everything else can be arbitrary.
+            Window {
+                id: 1,
+                x_offset,
+                y_offset,
+                width: 1920,
+                height: 1056,
+                window_class: "chrome".to_string(),
+                title: "Chrome".to_string(),
+            }
+        }
+
+        #[test]
+        fn test_first_monitor() {
+            let window = create_window(0, 0);
+            assert_eq!(determine_which_monitor_window_is_on(&window), 0);
+        }
+
+        #[test]
+        fn test_second_monitor() {
+            let window = create_window(0, 1500);
+            assert_eq!(determine_which_monitor_window_is_on(&window), 1);
+        }
+
+        #[test]
+        fn test_third_monitor() {
+            let window = create_window(1920, 0);
+            assert_eq!(determine_which_monitor_window_is_on(&window), 2);
+        }
+
+        #[test]
+        fn test_fourth_monitor() {
+            let window = create_window(5364, 0);
+            assert_eq!(determine_which_monitor_window_is_on(&window), 3);
+        }
+    }
 }
