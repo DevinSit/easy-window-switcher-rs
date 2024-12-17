@@ -21,7 +21,7 @@ pub fn focus_by_monitor_index(index: usize) -> Result<()> {
     let windows = get_current_workspace_windows();
     let windows_by_monitor_index = index_windows_by_monitor(&windows);
 
-    if windows_by_monitor_index.len() > index {
+    if windows_by_monitor_index.contains_key(&index) {
         wmctrl::focus_window_by_id(windows_by_monitor_index[&index][0].id);
     }
 
