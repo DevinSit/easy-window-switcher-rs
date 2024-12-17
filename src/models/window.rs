@@ -71,8 +71,6 @@ impl Window {
     pub fn from_raw_config(raw_config: &str) -> Result<Self> {
         let split_config: Vec<&str> = raw_config.split_whitespace().collect();
 
-        println!("{:?}", split_config);
-
         let id = Window::parse_hex_string(split_config[0])?;
         let x_offset = split_config[2].parse::<i32>()?;
         let y_offset = split_config[3].parse::<i32>()?;
