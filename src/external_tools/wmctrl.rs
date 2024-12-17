@@ -57,6 +57,21 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_get_workspace_config() {
+        let (grid, _position) = get_workspace_config();
+
+        assert!(grid.width > 0);
+        assert!(grid.height > 0);
+    }
+
+    #[test]
+    fn test_get_windows_config() {
+        let windows = get_windows_config();
+
+        assert!(!windows.is_empty());
+    }
+
+    #[test]
     fn test_parse_workspace_config() {
         let workspace_config = "0  * DG: 20400x7680  VP: 6800,0  WA: 0,24 6800x2536  N/A";
         let (grid, position) = parse_workspace_config(workspace_config);
