@@ -7,3 +7,15 @@ pub fn get_current_focused_window_id() -> i32 {
 
     output.parse::<i32>().unwrap()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_current_focused_window_id() {
+        let id = get_current_focused_window_id();
+
+        assert!(id > 0);
+    }
+}
