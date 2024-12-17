@@ -1,4 +1,4 @@
-use super::{Monitor, Window, WorkspacePosition};
+use super::{Monitor, Window};
 
 // TODO: Rewrite this comment.
 
@@ -24,7 +24,6 @@ use super::{Monitor, Window, WorkspacePosition};
 /// WORKSPACE_WIDTH = 1920 + 3440 + 1440
 
 type MonitorArrangement = Vec<Vec<Monitor>>;
-type WorkspaceIndices = Vec<Vec<usize>>;
 
 /// A 2D array representing the arrangement of monitors. The top-level slice represents columns and each inner slice represents a row of monitors.
 #[rustfmt::skip] // Note: Ignore rustfmt so that we can better visually see the monitor arrangement.
@@ -46,7 +45,6 @@ pub struct WorkspaceGrid {
     monitor_arrangement: MonitorArrangement,
     workspace_width: usize,  // pixels
     workspace_height: usize, // pixels
-    workspace_indices: WorkspaceIndices,
 }
 
 impl WorkspaceGrid {
@@ -67,10 +65,6 @@ impl WorkspaceGrid {
             monitor_arrangement,
             workspace_width,
             workspace_height,
-            workspace_indices: WorkspaceGrid::calculate_workspace_indices(
-                GRID_COLUMNS_COUNT,
-                GRID_COLUMNS_COUNT,
-            ),
         }
     }
 
@@ -84,16 +78,7 @@ impl WorkspaceGrid {
         WorkspaceGrid::new(grid_dimensions[0], grid_dimensions[1])
     }
 
-    pub fn get_workspace_index(&self, workspace_position: WorkspacePosition) -> usize {
-        WorkspaceGrid::calculate_workspace_index(
-            &self.workspace_indices,
-            self.workspace_width,
-            self.workspace_height,
-            workspace_position,
-        )
-    }
-
-    pub fn window_in_current_workspace(&self, window: &Window) -> bool {
+    pub fn is_window_in_current_workspace(&self, window: &Window) -> bool {
         // Can find the windows in the current workspace by looking at the x and y offsets.
         //
         // Negative offsets mean that the window is placed somewhere outside of the current workspace.
@@ -133,32 +118,6 @@ impl WorkspaceGrid {
         }
 
         (workspace_width, workspace_height)
-    }
-
-    fn calculate_workspace_indices(rows_count: usize, columns_count: usize) -> WorkspaceIndices {
-        let mut workspace_indices: WorkspaceIndices = Vec::new();
-
-        for row in 0..rows_count {
-            workspace_indices.push(Vec::new());
-
-            for column in 0..columns_count {
-                workspace_indices[row].push((row * columns_count) + column);
-            }
-        }
-
-        workspace_indices
-    }
-
-    fn calculate_workspace_index(
-        workspace_indices: &WorkspaceIndices,
-        workspace_width: usize,
-        workspace_height: usize,
-        workspace_position: WorkspacePosition,
-    ) -> usize {
-        let row_index = workspace_position.x / workspace_width;
-        let column_index = workspace_position.y / workspace_height;
-
-        workspace_indices[column_index][row_index]
     }
 }
 
@@ -219,159 +178,6 @@ mod tests {
 
             assert_eq!(workspace_width, 0);
             assert_eq!(workspace_height, 0);
-        }
-    }
-
-    mod calculate_workspace_indices {
-        use super::*;
-
-        #[test]
-        fn test_3x3_grid() {
-            let indices = WorkspaceGrid::calculate_workspace_indices(3, 3);
-
-            // Expected workspace indices for a 3x3 grid
-            let expected_indices = vec![vec![0, 1, 2], vec![3, 4, 5], vec![6, 7, 8]];
-
-            assert_eq!(indices, expected_indices);
-        }
-
-        #[test]
-        fn test_2x2_grid() {
-            let indices = WorkspaceGrid::calculate_workspace_indices(2, 2);
-
-            // Expected workspace indices for a 2x2 grid
-            let expected_indices = vec![vec![0, 1], vec![2, 3]];
-
-            assert_eq!(indices, expected_indices);
-        }
-
-        #[test]
-        fn test_non_square_grid() {
-            let indices = WorkspaceGrid::calculate_workspace_indices(3, 2);
-
-            // Expected workspace indices for a 3x2 grid
-            let expected_indices = vec![vec![0, 1], vec![2, 3], vec![4, 5]];
-
-            assert_eq!(indices, expected_indices);
-        }
-
-        #[test]
-        fn test_single_row() {
-            let indices = WorkspaceGrid::calculate_workspace_indices(1, 6);
-
-            // Expected workspace indices for a single row with 6 columns
-            let expected_indices = vec![vec![0, 1, 2, 3, 4, 5]];
-
-            assert_eq!(indices, expected_indices);
-        }
-
-        #[test]
-        fn test_single_column() {
-            let indices = WorkspaceGrid::calculate_workspace_indices(4, 1);
-
-            // Expected workspace indices for a single column with 4 rows
-            let expected_indices = vec![vec![0], vec![1], vec![2], vec![3]];
-
-            assert_eq!(indices, expected_indices);
-        }
-
-        #[test]
-        fn test_empty_grid() {
-            let indices = WorkspaceGrid::calculate_workspace_indices(1, 1);
-
-            // Expected workspace indices for an empty grid (but still a 1x1 grid)
-            let expected_indices = vec![vec![0]];
-
-            assert_eq!(indices, expected_indices);
-        }
-    }
-
-    mod calculate_workspace_index {
-        use super::*;
-
-        #[test]
-        fn test_top_left() {
-            let workspace_indices = vec![vec![0, 1, 2], vec![3, 4, 5], vec![6, 7, 8]];
-            let workspace_width = 640;
-            let workspace_height = 480;
-            let position = WorkspacePosition { x: 0, y: 0 };
-
-            let index = WorkspaceGrid::calculate_workspace_index(
-                &workspace_indices,
-                workspace_width,
-                workspace_height,
-                position,
-            );
-
-            assert_eq!(index, 0);
-        }
-
-        #[test]
-        fn test_top_right() {
-            let workspace_indices = vec![vec![0, 1, 2], vec![3, 4, 5], vec![6, 7, 8]];
-            let workspace_width = 640;
-            let workspace_height = 480;
-            let position = WorkspacePosition { x: 1280, y: 0 };
-
-            let index = WorkspaceGrid::calculate_workspace_index(
-                &workspace_indices,
-                workspace_width,
-                workspace_height,
-                position,
-            );
-
-            assert_eq!(index, 2);
-        }
-
-        #[test]
-        fn test_bottom_left() {
-            let workspace_indices = vec![vec![0, 1, 2], vec![3, 4, 5], vec![6, 7, 8]];
-            let workspace_width = 640;
-            let workspace_height = 480;
-            let position = WorkspacePosition { x: 0, y: 960 };
-
-            let index = WorkspaceGrid::calculate_workspace_index(
-                &workspace_indices,
-                workspace_width,
-                workspace_height,
-                position,
-            );
-
-            assert_eq!(index, 6);
-        }
-
-        #[test]
-        fn test_bottom_right() {
-            let workspace_indices = vec![vec![0, 1, 2], vec![3, 4, 5], vec![6, 7, 8]];
-            let workspace_width = 640;
-            let workspace_height = 480;
-            let position = WorkspacePosition { x: 1280, y: 960 };
-
-            let index = WorkspaceGrid::calculate_workspace_index(
-                &workspace_indices,
-                workspace_width,
-                workspace_height,
-                position,
-            );
-
-            assert_eq!(index, 8);
-        }
-
-        #[test]
-        fn test_center() {
-            let workspace_indices = vec![vec![0, 1, 2], vec![3, 4, 5], vec![6, 7, 8]];
-            let workspace_width = 640;
-            let workspace_height = 480;
-            let position = WorkspacePosition { x: 640, y: 480 };
-
-            let index = WorkspaceGrid::calculate_workspace_index(
-                &workspace_indices,
-                workspace_width,
-                workspace_height,
-                position,
-            );
-
-            assert_eq!(index, 4);
         }
     }
 }

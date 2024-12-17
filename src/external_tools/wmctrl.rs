@@ -1,7 +1,7 @@
 use super::utils::{call_command, get_command_output};
-use crate::models::{Window, WorkspaceGrid, WorkspacePosition};
+use crate::models::{Window, WorkspaceGrid};
 
-pub fn get_workspace_config() -> (WorkspaceGrid, WorkspacePosition) {
+pub fn get_workspace_config() -> WorkspaceGrid {
     let workspace_config = get_command_output(&["wmctrl", "-d"]);
     parse_workspace_config(&workspace_config)
 }
@@ -15,7 +15,7 @@ pub fn focus_window_by_id(window_id: usize) {
     call_command(&["wmctrl", "-i", "-a", &window_id.to_string()]);
 }
 
-fn parse_workspace_config(system_config: &str) -> (WorkspaceGrid, WorkspacePosition) {
+fn parse_workspace_config(system_config: &str) -> WorkspaceGrid {
     let first_splits = system_config
         .split("DG:")
         .nth(1)
@@ -23,13 +23,7 @@ fn parse_workspace_config(system_config: &str) -> (WorkspaceGrid, WorkspacePosit
         .split("VP:")
         .collect::<Vec<&str>>();
 
-    let workspace_grid = WorkspaceGrid::from_string_dimensions(first_splits[0]);
-
-    let current_workspace_position = WorkspacePosition::from_string_position(
-        first_splits[1].split("WA:").next().unwrap().trim(),
-    );
-
-    (workspace_grid, current_workspace_position)
+    WorkspaceGrid::from_string_dimensions(first_splits[0])
 }
 
 fn parse_windows_config(windows_config: &str) -> Vec<Window> {
@@ -58,7 +52,7 @@ mod tests {
 
     #[test]
     fn test_get_workspace_config() {
-        let (grid, _position) = get_workspace_config();
+        let grid = get_workspace_config();
 
         assert!(grid.width > 0);
         assert!(grid.height > 0);
@@ -74,12 +68,10 @@ mod tests {
     #[test]
     fn test_parse_workspace_config() {
         let workspace_config = "0  * DG: 20400x7680  VP: 6800,0  WA: 0,24 6800x2536  N/A";
-        let (grid, position) = parse_workspace_config(workspace_config);
+        let grid = parse_workspace_config(workspace_config);
 
         assert_eq!(grid.width, 20400);
         assert_eq!(grid.height, 7680);
-        assert_eq!(position.x, 6800);
-        assert_eq!(position.y, 0);
     }
 
     #[test]

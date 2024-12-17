@@ -29,11 +29,11 @@ pub fn focus_by_monitor_index(index: usize) -> Result<()> {
 }
 
 fn get_current_workspace_windows() -> Vec<Window> {
-    let (workspace_grid, _) = wmctrl::get_workspace_config();
+    let workspace_grid = wmctrl::get_workspace_config();
 
     let mut current_workspace_windows = wmctrl::get_windows_config()
         .into_iter()
-        .filter(|window| workspace_grid.window_in_current_workspace(window))
+        .filter(|window| workspace_grid.is_window_in_current_workspace(window))
         .collect::<Vec<Window>>();
 
     // Sort by the x-offset to make sure the Windows are in order from left to right.
