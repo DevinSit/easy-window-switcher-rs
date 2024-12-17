@@ -1,4 +1,4 @@
-use super::{Monitor, WorkspacePosition};
+use super::{Monitor, Window, WorkspacePosition};
 
 // TODO: Rewrite this comment.
 
@@ -91,6 +91,22 @@ impl WorkspaceGrid {
             self.workspace_height,
             workspace_position,
         )
+    }
+
+    pub fn window_in_current_workspace(&self, window: &Window) -> bool {
+        // Can find the windows in the current workspace by looking at the x and y offsets.
+        //
+        // Negative offsets mean that the window is placed somewhere outside of the current workspace.
+        //
+        // Therefore, if x-offset isn't negative, the y-offset isn't negative,
+        // the x-offset doesn't exceed the total width of the workspace,
+        // and the y-offset doesn't exceed the total height of the workspace,
+        // then the window is in the current workspace.
+
+        window.x_offset >= 0
+            && window.x_offset < self.workspace_width as i32
+            && window.y_offset >= 0
+            && window.y_offset < self.workspace_height as i32
     }
 
     fn calculate_workspace_size(monitor_arrangement: &MonitorArrangement) -> (usize, usize) {

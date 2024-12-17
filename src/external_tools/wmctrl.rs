@@ -11,7 +11,7 @@ pub fn get_windows_config() -> Vec<Window> {
     parse_windows_config(&windows_config)
 }
 
-pub fn focus_window_by_id(window_id: i32) {
+pub fn focus_window_by_id(window_id: usize) {
     call_command(&["wmctrl", "-i", "-a", &window_id.to_string()]);
 }
 

@@ -1,5 +1,5 @@
-use easy_window_switcher_rs::external_tools::xdotool;
+use easy_window_switcher_rs::services::window_focuser;
 
 fn main() {
-    println!("{:?}", xdotool::get_current_focused_window_id());
+    window_focuser::focus_by_monitor_index(0);
 }

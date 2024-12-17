@@ -24,7 +24,7 @@ pub const WINDOW_DECORATION: i32 = 24;
 /// - title: The title of the window.
 #[derive(Clone, Debug)]
 pub struct Window {
-    pub id: u64,
+    pub id: usize,
     pub x_offset: i32,
     pub y_offset: i32,
     pub width: i32,
@@ -35,7 +35,7 @@ pub struct Window {
 
 impl Window {
     pub fn new(
-        id: u64,
+        id: usize,
         x_offset: i32,
         y_offset: i32,
         width: i32,
@@ -92,8 +92,8 @@ impl Window {
         })
     }
 
-    fn parse_hex_string(hex_string: &str) -> Result<u64> {
-        Ok(u64::from_str_radix(
+    fn parse_hex_string(hex_string: &str) -> Result<usize> {
+        Ok(usize::from_str_radix(
             hex_string.trim_start_matches("0x"),
             16,
         )?)
