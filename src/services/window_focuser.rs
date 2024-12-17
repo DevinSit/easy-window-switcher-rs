@@ -189,5 +189,9 @@ fn get_window_from_monitor<'a>(
 }
 
 fn next_monitor(current_monitor: i32, direction: i32) -> i32 {
-    (current_monitor + direction) % NUMBER_OF_MONITORS
+    // Need to this song and dance to get the modulo behavior we want.
+    // Otherwise, we can get a negative remainder.
+    //
+    // Ref: https://stackoverflow.com/q/31210357
+    (((current_monitor + direction) % NUMBER_OF_MONITORS) + NUMBER_OF_MONITORS) % NUMBER_OF_MONITORS
 }
