@@ -1,5 +1,14 @@
 use anyhow::Result;
 
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct WindowId(pub usize);
+
+impl std::fmt::Display for WindowId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// The height of the window decoration that is constant in Ubuntu.
 pub const WINDOW_DECORATION: i32 = 24;
 
@@ -24,7 +33,7 @@ pub const WINDOW_DECORATION: i32 = 24;
 /// - title: The title of the window.
 #[derive(Clone, Debug)]
 pub struct Window {
-    pub id: usize,
+    pub id: WindowId,
     pub x_offset: i32,
     pub y_offset: i32,
     pub width: i32,
@@ -35,7 +44,7 @@ pub struct Window {
 
 impl Window {
     pub fn new(
-        id: usize,
+        id: WindowId,
         x_offset: i32,
         y_offset: i32,
         width: i32,
@@ -80,7 +89,7 @@ impl Window {
         let title: String = split_config[8..].join(" "); // Skip column 7 since we don't care about the hostname.
 
         Ok(Self {
-            id,
+            id: WindowId(id),
             x_offset,
             y_offset,
             height,
@@ -122,7 +131,7 @@ mod tests {
     #[test]
     fn test_window_creation() {
         let window = Window::new(
-            0x05000006,
+            WindowId(0x05000006),
             1920,
             24,
             1920,
@@ -131,7 +140,7 @@ mod tests {
             "Terminal".to_string(),
         );
 
-        assert_eq!(window.id, 83886086);
+        assert_eq!(window.id, WindowId(83886086));
         assert_eq!(window.x_offset, 1920);
         assert_eq!(window.y_offset, 24);
         assert_eq!(window.width, 1920);
@@ -147,7 +156,7 @@ mod tests {
 
         match Window::from_raw_config(raw_config) {
             Ok(window) => {
-                assert_eq!(window.id, 83886086);
+                assert_eq!(window.id, WindowId(83886086));
                 assert_eq!(window.x_offset, 1920);
                 assert_eq!(window.y_offset, 24);
                 assert_eq!(window.width, 1920);
@@ -178,7 +187,7 @@ mod display_tests {
     #[test]
     fn test_display() {
         let window = Window::new(
-            0x05000006,
+            WindowId(0x05000006),
             1920,
             24,
             1920,

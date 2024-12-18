@@ -1,12 +1,12 @@
 use super::utils::{call_command, get_command_output};
-use crate::models::Window;
+use crate::models::{Window, WindowId};
 
 pub fn get_windows_config() -> Vec<Window> {
     let windows_config = get_command_output(&["wmctrl", "-l", "-G", "-x"]);
     parse_windows_config(&windows_config)
 }
 
-pub fn focus_window_by_id(window_id: usize) {
+pub fn focus_window_by_id(window_id: &WindowId) {
     call_command(&["wmctrl", "-i", "-a", &window_id.to_string()]);
 }
 
@@ -32,6 +32,8 @@ fn parse_windows_config(windows_config: &str) -> Vec<Window> {
 
 #[cfg(test)]
 mod tests {
+    use crate::models::WindowId;
+
     use super::*;
 
     #[test]
@@ -60,7 +62,7 @@ mod tests {
         assert_eq!(windows.len(), 1);
 
         if let Some(window) = windows.iter().find(|w| w.window_class == "code.Code") {
-            assert_eq!(window.id, 77594630);
+            assert_eq!(window.id, WindowId(77594630));
             assert_eq!(window.x_offset, 1920);
             assert_eq!(window.y_offset, 564);
             assert_eq!(window.width, 3440);

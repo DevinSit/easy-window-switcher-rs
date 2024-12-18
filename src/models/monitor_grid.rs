@@ -127,10 +127,12 @@ mod tests {
     mod determine_which_monitor_window_is_on {
         use super::*;
 
+        use crate::models::WindowId;
+
         fn create_mock_window(x_offset: i32, y_offset: i32) -> Window {
             // Only values that matter are the offsets; everything else can be arbitrary.
             Window {
-                id: 1,
+                id: WindowId(1),
                 x_offset,
                 y_offset,
                 width: 1920,
