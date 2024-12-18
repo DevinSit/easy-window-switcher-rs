@@ -77,13 +77,13 @@ impl MonitorGrid {
         ))
     }
 
-    pub fn get_next_monitor(&self, current_monitor: i32, direction: i32) -> i32 {
+    pub fn get_next_monitor(&self, current_monitor: usize, direction: i32) -> usize {
         // Need to do this "multiple module operations" song and dance to get the modulo behavior we want.
         // Otherwise, we can get a negative remainder.
         //
         // Ref: https://stackoverflow.com/q/31210357
-        (((current_monitor + direction) % self.monitors_count) + self.monitors_count)
-            % self.monitors_count
+        ((((current_monitor as i32 + direction) % self.monitors_count) + self.monitors_count)
+            % self.monitors_count) as usize
     }
 
     fn calculate_monitor_count(monitors: &[Vec<Monitor>]) -> i32 {

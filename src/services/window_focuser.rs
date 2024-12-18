@@ -103,8 +103,7 @@ fn get_closest_window(
                     current_monitor_windows,
                     current_window_position,
                 ) {
-                    let mut left_monitor =
-                        grid.get_next_monitor(current_monitor.try_into().unwrap(), -1);
+                    let mut left_monitor = grid.get_next_monitor(current_monitor, -1);
 
                     let mut optional_window =
                         get_window_from_monitor(&windows_by_monitor, left_monitor, -1);
@@ -133,8 +132,7 @@ fn get_closest_window(
                     current_monitor_windows,
                     current_window_position,
                 ) {
-                    let mut left_monitor =
-                        grid.get_next_monitor(current_monitor.try_into().unwrap(), 1);
+                    let mut left_monitor = grid.get_next_monitor(current_monitor, 1);
 
                     let mut optional_window =
                         get_window_from_monitor(&windows_by_monitor, left_monitor, 0);
@@ -180,11 +178,12 @@ fn is_rightmost_window_on_current_monitor(
 
 fn get_window_from_monitor<'a>(
     windows_by_monitor: &'a HashMap<usize, Vec<&'a Window>>,
-    monitor: i32,
+    monitor: usize,
     index: i32,
 ) -> Option<&'a Window> {
-    if let Some(windows) = windows_by_monitor.get(&(monitor as usize)) {
+    if let Some(windows) = windows_by_monitor.get(&monitor) {
         if index < 0 {
+            // This is a direct conversion of Python's "-1 index is the last element" idiom.
             windows.last().map(|v| &**v)
         } else {
             Some(windows[index as usize])
