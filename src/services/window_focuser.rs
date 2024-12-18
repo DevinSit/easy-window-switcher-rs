@@ -120,9 +120,7 @@ fn get_closest_window(
             }
         }
     } else {
-        let index: i32 = direction.clone().into();
-        let position: i32 = current_window_position as i32 + index;
-
+        let position: i32 = current_window_position as i32 + direction.to_int();
         Ok(Some(current_monitor_windows[position as usize].clone()))
     }
 }

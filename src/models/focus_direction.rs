@@ -6,32 +6,8 @@ pub enum FocusDirection {
     Right,
 }
 
-impl TryFrom<i32> for FocusDirection {
-    type Error = anyhow::Error;
-
-    fn try_from(value: i32) -> Result<Self> {
-        match value {
-            -1 => Ok(FocusDirection::Left),
-            1 => Ok(FocusDirection::Right),
-            _ => Err(anyhow::anyhow!("Invalid focus direction: {}", value)),
-        }
-    }
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<i32> for FocusDirection {
-    fn into(self) -> i32 {
-        match self {
-            FocusDirection::Left => -1,
-            FocusDirection::Right => 1,
-        }
-    }
-}
-
-impl TryFrom<String> for FocusDirection {
-    type Error = anyhow::Error;
-
-    fn try_from(value: String) -> Result<Self> {
+impl FocusDirection {
+    pub fn try_from_string(value: &str) -> Result<Self> {
         if value == "left" {
             Ok(FocusDirection::Left)
         } else if value == "right" {
@@ -39,5 +15,40 @@ impl TryFrom<String> for FocusDirection {
         } else {
             Err(anyhow::anyhow!("Invalid focus direction: {}", value))
         }
+    }
+
+    pub fn to_int(&self) -> i32 {
+        match self {
+            FocusDirection::Left => -1,
+            FocusDirection::Right => 1,
+        }
+    }
+}
+
+impl From<FocusDirection> for i32 {
+    fn from(value: FocusDirection) -> Self {
+        value.to_int()
+    }
+}
+
+impl From<&FocusDirection> for i32 {
+    fn from(value: &FocusDirection) -> Self {
+        value.to_int()
+    }
+}
+
+impl TryFrom<String> for FocusDirection {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> Result<Self> {
+        FocusDirection::try_from_string(&value)
+    }
+}
+
+impl TryFrom<&str> for FocusDirection {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &str) -> Result<Self> {
+        FocusDirection::try_from_string(value)
     }
 }
