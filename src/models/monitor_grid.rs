@@ -18,13 +18,17 @@ pub struct MonitorGrid {
 
 impl Default for MonitorGrid {
     fn default() -> Self {
-        MonitorGrid::new(MONITOR_GRID)
+        let monitors = MONITOR_GRID
+            .iter()
+            .map(|&monitors| monitors.to_vec())
+            .collect();
+
+        MonitorGrid::new(monitors)
     }
 }
 
 impl MonitorGrid {
-    pub fn new(raw_grid: &[&[Monitor]]) -> Self {
-        let monitors = raw_grid.iter().map(|&monitors| monitors.to_vec()).collect();
+    pub fn new(monitors: Vec<Vec<Monitor>>) -> Self {
         let (workspace_width, workspace_height) = Self::calculate_workspace_size(&monitors);
 
         MonitorGrid {
@@ -134,7 +138,7 @@ mod tests {
         #[test]
         fn test_first_monitor() {
             let window = create_window(0, 0);
-            let grid = MonitorGrid::new(MONITOR_GRID);
+            let grid = MonitorGrid::default();
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
@@ -145,7 +149,7 @@ mod tests {
         #[test]
         fn test_second_monitor() {
             let window = create_window(0, 1500);
-            let grid = MonitorGrid::new(MONITOR_GRID);
+            let grid = MonitorGrid::default();
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
@@ -156,7 +160,7 @@ mod tests {
         #[test]
         fn test_third_monitor() {
             let window = create_window(1920, 0);
-            let grid = MonitorGrid::new(MONITOR_GRID);
+            let grid = MonitorGrid::default();
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
@@ -167,7 +171,7 @@ mod tests {
         #[test]
         fn test_fourth_monitor() {
             let window = create_window(5364, 0);
-            let grid = MonitorGrid::new(MONITOR_GRID);
+            let grid = MonitorGrid::default();
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
@@ -178,7 +182,7 @@ mod tests {
         #[test]
         fn test_invalid_monitor() {
             let window = create_window(100000, 0);
-            let grid = MonitorGrid::new(MONITOR_GRID);
+            let grid = MonitorGrid::default();
 
             assert!(grid.determine_which_monitor_window_is_on(&window).is_err());
         }
