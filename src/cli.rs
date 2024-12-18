@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
+use crate::models::FocusDirection;
 use crate::services::window_focuser;
 
 #[derive(Parser, Debug)]
@@ -28,7 +29,10 @@ pub fn run() -> Result<()> {
     let args = Args::parse();
 
     match args.cmd {
-        Commands::Direction { direction } => window_focuser::focus_by_direction(&direction),
+        Commands::Direction { direction } => {
+            let direction = FocusDirection::parse(&direction)?;
+            window_focuser::focus_by_direction(&direction)
+        }
         Commands::Monitor { monitor } => window_focuser::focus_by_monitor_index(monitor),
     }
 }

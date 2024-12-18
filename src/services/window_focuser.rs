@@ -2,9 +2,9 @@ use anyhow::Result;
 use std::collections::HashMap;
 
 use crate::external_tools::{wmctrl, xdotool, xrandr};
-use crate::models::{MonitorGrid, Window};
+use crate::models::{FocusDirection, MonitorGrid, Window};
 
-pub fn focus_by_direction(direction: &str) -> Result<()> {
+pub fn focus_by_direction(direction: &FocusDirection) -> Result<()> {
     let monitor_grid = xrandr::get_monitor_grid()?;
     let windows = get_current_workspace_windows(&monitor_grid);
 
@@ -81,7 +81,7 @@ fn get_current_monitor(monitors_by_window: HashMap<usize, usize>) -> usize {
 fn get_closest_window(
     grid: &MonitorGrid,
     windows: &Vec<Window>,
-    direction: &str,
+    direction: &FocusDirection,
 ) -> Result<Option<Window>> {
     let windows_by_monitor = index_windows_by_monitor(grid, windows)?;
     let monitors_by_window = index_monitors_by_window(grid, windows)?;
@@ -98,7 +98,7 @@ fn get_closest_window(
         Ok(None)
     } else {
         match direction {
-            "left" => {
+            FocusDirection::Left => {
                 if is_leftmost_window_on_current_monitor(
                     current_monitor_windows,
                     current_window_position,
@@ -127,7 +127,7 @@ fn get_closest_window(
                     ))
                 }
             }
-            "right" => {
+            FocusDirection::Right => {
                 if is_rightmost_window_on_current_monitor(
                     current_monitor_windows,
                     current_window_position,
@@ -156,7 +156,6 @@ fn get_closest_window(
                     ))
                 }
             }
-            _ => Err(anyhow::anyhow!("Invalid direction: {direction}")),
         }
     }
 }
