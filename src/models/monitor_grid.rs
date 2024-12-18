@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use super::{FocusDirection, Monitor, Window, WINDOW_DECORATION};
+use super::{FocusDirection, Monitor, MonitorIndex, Window, WINDOW_DECORATION};
 
 pub struct MonitorGrid {
     /// A 2D array representing the arrangement of monitors. The top-level slice represents columns and each inner slice represents a row of monitors.
@@ -77,14 +77,20 @@ impl MonitorGrid {
         ))
     }
 
-    pub fn get_next_monitor(&self, current_monitor: usize, direction: &FocusDirection) -> usize {
-        // Need to do this "multiple module operations" song and dance to get the modulo behavior we want.
-        // Otherwise, we can get a negative remainder.
-        //
-        // Ref: https://stackoverflow.com/q/31210357
-        ((((current_monitor as i32 + direction.to_int()) % self.monitors_count)
-            + self.monitors_count)
-            % self.monitors_count) as usize
+    pub fn get_next_monitor(
+        &self,
+        current_monitor: &MonitorIndex,
+        direction: &FocusDirection,
+    ) -> MonitorIndex {
+        MonitorIndex(
+            // Need to do this "multiple module operations" song and dance to get the modulo behavior we want.
+            // Otherwise, we can get a negative remainder.
+            //
+            // Ref: https://stackoverflow.com/q/31210357
+            ((((current_monitor.0 as i32 + direction.to_int()) % self.monitors_count)
+                + self.monitors_count)
+                % self.monitors_count) as usize,
+        )
     }
 
     fn calculate_monitor_count(monitors: &[Vec<Monitor>]) -> i32 {

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
-use crate::models::FocusDirection;
+use crate::models::{FocusDirection, MonitorIndex};
 use crate::services::window_focuser;
 
 #[derive(Parser, Debug)]
@@ -32,6 +32,8 @@ pub fn run() -> Result<()> {
         Commands::Direction { direction } => {
             window_focuser::focus_by_direction(FocusDirection::try_from(direction)?)
         }
-        Commands::Monitor { monitor } => window_focuser::focus_by_monitor_index(monitor),
+        Commands::Monitor { monitor } => {
+            window_focuser::focus_by_monitor_index(MonitorIndex(monitor))
+        }
     }
 }

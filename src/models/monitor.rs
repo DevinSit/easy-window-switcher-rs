@@ -1,5 +1,14 @@
 use anyhow::Result;
 
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MonitorIndex(pub usize);
+
+impl std::fmt::Display for MonitorIndex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Monitor {
     pub width: i32,

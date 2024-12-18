@@ -2,7 +2,7 @@ use anyhow::{Ok, Result};
 use std::collections::HashMap;
 
 use crate::external_tools::{wmctrl, xdotool, xrandr};
-use crate::models::{FocusDirection, MonitorGrid, Window, WindowId};
+use crate::models::{FocusDirection, MonitorGrid, MonitorIndex, Window, WindowId};
 
 pub fn focus_by_direction(direction: FocusDirection) -> Result<()> {
     let monitor_grid = xrandr::get_monitor_grid()?;
@@ -15,7 +15,7 @@ pub fn focus_by_direction(direction: FocusDirection) -> Result<()> {
     Ok(())
 }
 
-pub fn focus_by_monitor_index(index: usize) -> Result<()> {
+pub fn focus_by_monitor_index(index: MonitorIndex) -> Result<()> {
     let monitor_grid = xrandr::get_monitor_grid()?;
     let windows = get_current_workspace_windows(&monitor_grid);
     let windows_by_monitor_index = index_windows_by_monitor(&monitor_grid, &windows)?;
@@ -42,14 +42,14 @@ fn get_current_workspace_windows(monitor_grid: &MonitorGrid) -> Vec<Window> {
 fn index_windows_by_monitor<'a>(
     monitor_grid: &MonitorGrid,
     windows: &'a Vec<Window>,
-) -> Result<HashMap<usize, Vec<&'a Window>>> {
-    let mut windows_by_monitor_index: HashMap<usize, Vec<&Window>> = HashMap::new();
+) -> Result<HashMap<MonitorIndex, Vec<&'a Window>>> {
+    let mut windows_by_monitor_index: HashMap<MonitorIndex, Vec<&Window>> = HashMap::new();
 
     for window in windows {
         let monitor_index = monitor_grid.determine_which_monitor_window_is_on(window)?;
 
         windows_by_monitor_index
-            .entry(monitor_index)
+            .entry(MonitorIndex(monitor_index))
             .or_default()
             .push(window);
     }
@@ -60,21 +60,21 @@ fn index_windows_by_monitor<'a>(
 fn index_monitors_by_window(
     monitor_grid: &MonitorGrid,
     windows: &Vec<Window>,
-) -> Result<HashMap<WindowId, usize>> {
-    let mut monitors_by_window: HashMap<WindowId, usize> = HashMap::new();
+) -> Result<HashMap<WindowId, MonitorIndex>> {
+    let mut monitors_by_window: HashMap<WindowId, MonitorIndex> = HashMap::new();
 
     for window in windows {
         monitors_by_window.insert(
             window.id.clone(),
-            monitor_grid.determine_which_monitor_window_is_on(window)?,
+            MonitorIndex(monitor_grid.determine_which_monitor_window_is_on(window)?),
         );
     }
 
     Ok(monitors_by_window)
 }
 
-fn get_current_monitor(monitors_by_window: &HashMap<WindowId, usize>) -> usize {
-    monitors_by_window[&WindowId(xdotool::get_current_focused_window_id())]
+fn get_current_monitor(monitors_by_window: &HashMap<WindowId, MonitorIndex>) -> MonitorIndex {
+    monitors_by_window[&xdotool::get_current_focused_window_id()].clone()
 }
 
 fn get_closest_window(
@@ -94,17 +94,17 @@ fn get_closest_window(
 
     if let Some(current_window_position) = current_monitor_windows
         .iter()
-        .position(|w| w.id == WindowId(xdotool::get_current_focused_window_id()))
+        .position(|w| w.id == xdotool::get_current_focused_window_id())
     {
         if is_closest_window_not_on_current_monitor(
             direction,
             current_monitor_windows,
             current_window_position,
         ) {
-            let mut next_monitor = monitor_grid.get_next_monitor(current_monitor, direction);
+            let mut next_monitor = monitor_grid.get_next_monitor(&current_monitor, direction);
 
             let mut optional_window =
-                get_window_from_monitor(&windows_by_monitor, next_monitor, direction);
+                get_window_from_monitor(&windows_by_monitor, &next_monitor, direction);
 
             loop {
                 match optional_window {
@@ -112,10 +112,10 @@ fn get_closest_window(
                         return Ok(Some(window.clone()));
                     }
                     None => {
-                        next_monitor = monitor_grid.get_next_monitor(next_monitor, direction);
+                        next_monitor = monitor_grid.get_next_monitor(&next_monitor, direction);
 
                         optional_window =
-                            get_window_from_monitor(&windows_by_monitor, next_monitor, direction);
+                            get_window_from_monitor(&windows_by_monitor, &next_monitor, direction);
                     }
                 }
             }
@@ -145,11 +145,11 @@ fn is_closest_window_not_on_current_monitor(
 }
 
 fn get_window_from_monitor<'a>(
-    windows_by_monitor: &'a HashMap<usize, Vec<&'a Window>>,
-    monitor: usize,
+    windows_by_monitor: &'a HashMap<MonitorIndex, Vec<&'a Window>>,
+    monitor: &MonitorIndex,
     direction: &FocusDirection,
 ) -> Option<&'a Window> {
-    if let Some(windows) = windows_by_monitor.get(&monitor) {
+    if let Some(windows) = windows_by_monitor.get(monitor) {
         match direction {
             FocusDirection::Left => windows.last().map(|v| &**v),
             FocusDirection::Right => windows.first().map(|v| &**v),

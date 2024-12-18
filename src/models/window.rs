@@ -80,7 +80,7 @@ impl Window {
     pub fn from_raw_config(raw_config: &str) -> Result<Self> {
         let split_config: Vec<&str> = raw_config.split_whitespace().collect();
 
-        let id = Window::parse_hex_string(split_config[0])?;
+        let id = Self::parse_id(split_config[0])?;
         let x_offset = split_config[2].parse::<i32>()?;
         let y_offset = split_config[3].parse::<i32>()?;
         let width = split_config[4].parse::<i32>()?;
@@ -89,7 +89,7 @@ impl Window {
         let title: String = split_config[8..].join(" "); // Skip column 7 since we don't care about the hostname.
 
         Ok(Self {
-            id: WindowId(id),
+            id,
             x_offset,
             y_offset,
             height,
@@ -99,11 +99,11 @@ impl Window {
         })
     }
 
-    fn parse_hex_string(hex_string: &str) -> Result<usize> {
-        Ok(usize::from_str_radix(
+    fn parse_id(hex_string: &str) -> Result<WindowId> {
+        Ok(WindowId(usize::from_str_radix(
             hex_string.trim_start_matches("0x"),
             16,
-        )?)
+        )?))
     }
 }
 
