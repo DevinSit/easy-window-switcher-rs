@@ -4,11 +4,11 @@ use std::collections::HashMap;
 use crate::external_tools::{wmctrl, xdotool, xrandr};
 use crate::models::{FocusDirection, MonitorGrid, Window};
 
-pub fn focus_by_direction(direction: &FocusDirection) -> Result<()> {
+pub fn focus_by_direction(direction: FocusDirection) -> Result<()> {
     let monitor_grid = xrandr::get_monitor_grid()?;
     let windows = get_current_workspace_windows(&monitor_grid);
 
-    if let Some(window_to_focus) = get_closest_window(&monitor_grid, &windows, direction)? {
+    if let Some(window_to_focus) = get_closest_window(&monitor_grid, &windows, &direction)? {
         wmctrl::focus_window_by_id(window_to_focus.id);
     }
 
@@ -103,7 +103,8 @@ fn get_closest_window(
                     current_monitor_windows,
                     current_window_position,
                 ) {
-                    let mut left_monitor = grid.get_next_monitor(current_monitor, -1);
+                    let mut left_monitor =
+                        grid.get_next_monitor(current_monitor, direction.clone());
 
                     let mut optional_window =
                         get_window_from_monitor(&windows_by_monitor, left_monitor, -1);
@@ -114,7 +115,8 @@ fn get_closest_window(
                                 return Ok(Some(window.clone()));
                             }
                             None => {
-                                left_monitor = grid.get_next_monitor(left_monitor, -1);
+                                left_monitor =
+                                    grid.get_next_monitor(left_monitor, direction.clone());
 
                                 optional_window =
                                     get_window_from_monitor(&windows_by_monitor, left_monitor, -1);
@@ -132,7 +134,8 @@ fn get_closest_window(
                     current_monitor_windows,
                     current_window_position,
                 ) {
-                    let mut left_monitor = grid.get_next_monitor(current_monitor, 1);
+                    let mut left_monitor =
+                        grid.get_next_monitor(current_monitor, direction.clone());
 
                     let mut optional_window =
                         get_window_from_monitor(&windows_by_monitor, left_monitor, 0);
@@ -143,7 +146,8 @@ fn get_closest_window(
                                 return Ok(Some(window.clone()));
                             }
                             None => {
-                                left_monitor = grid.get_next_monitor(left_monitor, 1);
+                                left_monitor =
+                                    grid.get_next_monitor(left_monitor, direction.clone());
 
                                 optional_window =
                                     get_window_from_monitor(&windows_by_monitor, left_monitor, 0);

@@ -30,8 +30,7 @@ pub fn run() -> Result<()> {
 
     match args.cmd {
         Commands::Direction { direction } => {
-            let direction = FocusDirection::parse(&direction)?;
-            window_focuser::focus_by_direction(&direction)
+            window_focuser::focus_by_direction(FocusDirection::try_from(direction)?)
         }
         Commands::Monitor { monitor } => window_focuser::focus_by_monitor_index(monitor),
     }
