@@ -77,8 +77,8 @@ impl MonitorGrid {
         ))
     }
 
-    pub fn get_next_monitor(&self, current_monitor: usize, direction: FocusDirection) -> usize {
-        let direction: i32 = direction.into();
+    pub fn get_next_monitor(&self, current_monitor: usize, direction: &FocusDirection) -> usize {
+        let direction: i32 = (*direction).clone().into();
 
         // Need to do this "multiple module operations" song and dance to get the modulo behavior we want.
         // Otherwise, we can get a negative remainder.
