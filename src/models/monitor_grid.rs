@@ -2,30 +2,16 @@ use anyhow::Result;
 
 use super::{Monitor, Window, WINDOW_DECORATION};
 
-/// A 2D array representing the arrangement of monitors. The top-level slice represents columns and each inner slice represents a row of monitors.
-#[rustfmt::skip] // Note: Ignore rustfmt so that we can better visually see the monitor arrangement.
-const MONITOR_GRID: &[&[Monitor]] =
-    &[
-        &[Monitor::new(1920, 1080),
-          Monitor::new(1920, 1080)], &[Monitor::new(3440, 1440)], &[Monitor::new(1440, 2560)]
-    ];
-
 pub struct MonitorGrid {
+    /// A 2D array representing the arrangement of monitors. The top-level slice represents columns and each inner slice represents a row of monitors.
+    /// See tests for examples.
     monitors: Vec<Vec<Monitor>>,
+    /// The number of monitors in the grid.
     monitors_count: i32,
+    /// The width of a single workspace (in pixels) that is made up of the monitors.
     workspace_width: i32,
+    /// The height of a single workspace (in pixels) that is made up of the monitors.
     workspace_height: i32,
-}
-
-impl Default for MonitorGrid {
-    fn default() -> Self {
-        let monitors = MONITOR_GRID
-            .iter()
-            .map(|&monitors| monitors.to_vec())
-            .collect();
-
-        MonitorGrid::new(monitors)
-    }
 }
 
 impl MonitorGrid {
@@ -140,7 +126,7 @@ mod tests {
     mod determine_which_monitor_window_is_on {
         use super::*;
 
-        fn create_window(x_offset: i32, y_offset: i32) -> Window {
+        fn create_mock_window(x_offset: i32, y_offset: i32) -> Window {
             // Only values that matter are the offsets; everything else can be arbitrary.
             Window {
                 id: 1,
@@ -153,10 +139,18 @@ mod tests {
             }
         }
 
+        fn create_mock_grid() -> MonitorGrid {
+            MonitorGrid::new(vec![
+                vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
+                vec![Monitor::new(3440, 1440)],
+                vec![Monitor::new(1440, 2560)],
+            ])
+        }
+
         #[test]
         fn test_first_monitor() {
-            let window = create_window(0, 0);
-            let grid = MonitorGrid::default();
+            let window = create_mock_window(0, 0);
+            let grid = create_mock_grid();
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
@@ -166,8 +160,8 @@ mod tests {
 
         #[test]
         fn test_second_monitor() {
-            let window = create_window(0, 1500);
-            let grid = MonitorGrid::default();
+            let window = create_mock_window(0, 1500);
+            let grid = create_mock_grid();
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
@@ -177,8 +171,8 @@ mod tests {
 
         #[test]
         fn test_third_monitor() {
-            let window = create_window(1920, 0);
-            let grid = MonitorGrid::default();
+            let window = create_mock_window(1920, 0);
+            let grid = create_mock_grid();
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
@@ -188,8 +182,8 @@ mod tests {
 
         #[test]
         fn test_fourth_monitor() {
-            let window = create_window(5364, 0);
-            let grid = MonitorGrid::default();
+            let window = create_mock_window(5364, 0);
+            let grid = create_mock_grid();
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
@@ -199,8 +193,8 @@ mod tests {
 
         #[test]
         fn test_invalid_monitor() {
-            let window = create_window(100000, 0);
-            let grid = MonitorGrid::default();
+            let window = create_mock_window(100000, 0);
+            let grid = create_mock_grid();
 
             assert!(grid.determine_which_monitor_window_is_on(&window).is_err());
         }
