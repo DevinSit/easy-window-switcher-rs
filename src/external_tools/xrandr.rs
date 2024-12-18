@@ -1,18 +1,18 @@
 use anyhow::Result;
 use std::collections::BTreeMap;
 
-use crate::models::{Monitor, MonitorGrid};
+use crate::models::{Monitor, MonitorGrid, Workspace};
 
 use super::utils::get_command_output;
 
 type MonitorConfig = String;
 type ParsedMonitorConfig = (String, i32, i32); // (dimensions, x_offset, y_offset)
 
-pub fn get_monitor_grid() -> Result<MonitorGrid> {
+pub fn parse_workspace() -> Result<Workspace> {
     let raw_monitors = get_raw_monitors_config();
     let parsed_monitors_grid = parse_raw_monitors_config(&raw_monitors)?;
 
-    Ok(MonitorGrid::new(parsed_monitors_grid))
+    Ok(Workspace::new(MonitorGrid(parsed_monitors_grid)))
 }
 
 /// Sample output:

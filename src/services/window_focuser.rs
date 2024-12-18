@@ -2,13 +2,15 @@ use anyhow::{Ok, Result};
 use std::collections::HashMap;
 
 use crate::external_tools::{wmctrl, xdotool, xrandr};
-use crate::models::{FocusDirection, MonitorGrid, MonitorIndex, Window, WindowId};
+use crate::models::{FocusDirection, MonitorGrid, MonitorIndex, Window, WindowId, Workspace};
 
 pub fn focus_by_direction(direction: FocusDirection) -> Result<()> {
-    let monitor_grid = xrandr::get_monitor_grid()?;
-    let windows = get_current_workspace_windows(&monitor_grid);
+    let workspace = xrandr::parse_workspace()?;
+    let windows = get_current_workspace_windows(&workspace);
 
-    if let Some(window_to_focus) = get_closest_window(&monitor_grid, &windows, &direction)? {
+    if let Some(window_to_focus) =
+        get_closest_window(&workspace.monitor_grid, &windows, &direction)?
+    {
         wmctrl::focus_window_by_id(&window_to_focus.id);
     }
 
@@ -16,9 +18,9 @@ pub fn focus_by_direction(direction: FocusDirection) -> Result<()> {
 }
 
 pub fn focus_by_monitor_index(index: MonitorIndex) -> Result<()> {
-    let monitor_grid = xrandr::get_monitor_grid()?;
-    let windows = get_current_workspace_windows(&monitor_grid);
-    let windows_by_monitor_index = index_windows_by_monitor(&monitor_grid, &windows)?;
+    let workspace = xrandr::parse_workspace()?;
+    let windows = get_current_workspace_windows(&workspace);
+    let windows_by_monitor_index = index_windows_by_monitor(&workspace.monitor_grid, &windows)?;
 
     if windows_by_monitor_index.contains_key(&index) {
         wmctrl::focus_window_by_id(&windows_by_monitor_index[&index][0].id);
@@ -27,10 +29,10 @@ pub fn focus_by_monitor_index(index: MonitorIndex) -> Result<()> {
     Ok(())
 }
 
-fn get_current_workspace_windows(monitor_grid: &MonitorGrid) -> Vec<Window> {
+fn get_current_workspace_windows(workspace: &Workspace) -> Vec<Window> {
     let mut current_workspace_windows = wmctrl::get_windows_config()
         .into_iter()
-        .filter(|window| monitor_grid.is_window_in_current_workspace(window))
+        .filter(|window| workspace.is_window_in_current_workspace(window))
         .collect::<Vec<Window>>();
 
     // Sort by the x-offset to make sure the Windows are in order from left to right.

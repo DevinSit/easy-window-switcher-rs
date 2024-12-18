@@ -2,45 +2,24 @@ use anyhow::Result;
 
 use super::{FocusDirection, Monitor, MonitorIndex, Window, WINDOW_DECORATION};
 
-pub struct MonitorGrid {
-    /// A 2D array representing the arrangement of monitors. The top-level slice represents columns and each inner slice represents a row of monitors.
-    /// See tests for examples.
-    monitors: Vec<Vec<Monitor>>,
-    /// The number of monitors in the grid.
-    monitors_count: i32,
-    /// The width of a single workspace (in pixels) that is made up of the monitors.
-    workspace_width: i32,
-    /// The height of a single workspace (in pixels) that is made up of the monitors.
-    workspace_height: i32,
-}
+pub struct MonitorGrid(pub Vec<Vec<Monitor>>);
 
 impl MonitorGrid {
-    pub fn new(monitors: Vec<Vec<Monitor>>) -> Self {
-        let (workspace_width, workspace_height) = Self::calculate_workspace_size(&monitors);
-        let monitors_count = Self::calculate_monitor_count(&monitors);
+    pub fn get_next_monitor(
+        &self,
+        current_monitor: &MonitorIndex,
+        direction: &FocusDirection,
+    ) -> MonitorIndex {
+        let monitors_count = self.calculate_monitor_count();
 
-        MonitorGrid {
-            monitors,
-            monitors_count,
-            workspace_width,
-            workspace_height,
-        }
-    }
-
-    pub fn is_window_in_current_workspace(&self, window: &Window) -> bool {
-        // Can find the windows in the current workspace by looking at the x and y offsets.
-        //
-        // Negative offsets mean that the window is placed somewhere outside of the current workspace.
-        //
-        // Therefore, if x-offset isn't negative, the y-offset isn't negative,
-        // the x-offset doesn't exceed the total width of the workspace,
-        // and the y-offset doesn't exceed the total height of the workspace,
-        // then the window is in the current workspace.
-
-        window.x_offset >= 0
-            && window.x_offset < self.workspace_width
-            && window.y_offset >= 0
-            && window.y_offset < self.workspace_height
+        MonitorIndex(
+            // Need to do this "multiple module operations" song and dance to get the modulo behavior we want.
+            // Otherwise, we can get a negative remainder.
+            //
+            // Ref: https://stackoverflow.com/q/31210357
+            ((((current_monitor.0 as i32 + direction.to_int()) % monitors_count) + monitors_count)
+                % monitors_count) as usize,
+        )
     }
 
     pub fn determine_which_monitor_window_is_on(&self, window: &Window) -> Result<usize> {
@@ -49,7 +28,7 @@ impl MonitorGrid {
         let mut monitor_index: i32 = -1;
         let mut row_width = 0;
 
-        for column in &self.monitors {
+        for column in &self.0 {
             monitor_index += 1;
 
             let mut column_height = -(WINDOW_DECORATION);
@@ -77,52 +56,10 @@ impl MonitorGrid {
         ))
     }
 
-    pub fn get_next_monitor(
-        &self,
-        current_monitor: &MonitorIndex,
-        direction: &FocusDirection,
-    ) -> MonitorIndex {
-        MonitorIndex(
-            // Need to do this "multiple module operations" song and dance to get the modulo behavior we want.
-            // Otherwise, we can get a negative remainder.
-            //
-            // Ref: https://stackoverflow.com/q/31210357
-            ((((current_monitor.0 as i32 + direction.to_int()) % self.monitors_count)
-                + self.monitors_count)
-                % self.monitors_count) as usize,
-        )
-    }
-
-    fn calculate_monitor_count(monitors: &[Vec<Monitor>]) -> i32 {
-        monitors
+    fn calculate_monitor_count(&self) -> i32 {
+        self.0
             .iter()
             .fold(0, |acc, column| acc + column.len() as i32)
-    }
-
-    fn calculate_workspace_size(monitors: &Vec<Vec<Monitor>>) -> (i32, i32) {
-        let mut workspace_width = 0;
-        let mut workspace_height = 0;
-
-        for column in monitors {
-            let mut column_height = 0;
-            let mut max_column_width = 0;
-
-            for monitor in column {
-                column_height += monitor.height;
-
-                if monitor.width > max_column_width {
-                    max_column_width = monitor.width;
-                }
-            }
-
-            if column_height > workspace_height {
-                workspace_height = column_height;
-            }
-
-            workspace_width += max_column_width;
-        }
-
-        (workspace_width, workspace_height)
     }
 }
 
@@ -149,7 +86,7 @@ mod tests {
         }
 
         fn create_mock_grid() -> MonitorGrid {
-            MonitorGrid::new(vec![
+            MonitorGrid(vec![
                 vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
                 vec![Monitor::new(3440, 1440)],
                 vec![Monitor::new(1440, 2560)],
@@ -206,62 +143,6 @@ mod tests {
             let grid = create_mock_grid();
 
             assert!(grid.determine_which_monitor_window_is_on(&window).is_err());
-        }
-    }
-
-    mod calculate_workspace_size {
-        use super::*;
-
-        #[test]
-        fn test_my_arrangement() {
-            let monitors = vec![
-                vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
-                vec![Monitor::new(3440, 1440)],
-                vec![Monitor::new(1440, 2560)],
-            ];
-
-            let (workspace_width, workspace_height) =
-                MonitorGrid::calculate_workspace_size(&monitors);
-
-            assert_eq!(workspace_width, 1920 + 3440 + 1440);
-            assert_eq!(workspace_height, 2560); // The max height of all columns
-        }
-
-        #[test]
-        fn test_different_arrangement() {
-            let monitors = vec![
-                vec![Monitor::new(1920, 1080)],
-                vec![Monitor::new(1440, 3440)],
-                vec![Monitor::new(1440, 2560)],
-            ];
-
-            let (workspace_width, workspace_height) =
-                MonitorGrid::calculate_workspace_size(&monitors);
-
-            assert_eq!(workspace_width, 1920 + 1440 + 1440);
-            assert_eq!(workspace_height, 3440); // The max height of all columns
-        }
-
-        #[test]
-        fn test_single_monitor() {
-            let monitors = vec![vec![Monitor::new(1920, 1080)]];
-
-            let (workspace_width, workspace_height) =
-                MonitorGrid::calculate_workspace_size(&monitors);
-
-            assert_eq!(workspace_width, 1920);
-            assert_eq!(workspace_height, 1080);
-        }
-
-        #[test]
-        fn test_empty_arrangement() {
-            let monitors: Vec<Vec<Monitor>> = vec![];
-
-            let (workspace_width, workspace_height) =
-                MonitorGrid::calculate_workspace_size(&monitors);
-
-            assert_eq!(workspace_width, 0);
-            assert_eq!(workspace_height, 0);
         }
     }
 }
