@@ -1,4 +1,6 @@
-use super::{Monitor, Window};
+use anyhow::Result;
+
+use super::{Monitor, Window, WINDOW_DECORATION};
 
 // TODO: Rewrite this comment.
 
@@ -94,6 +96,39 @@ impl WorkspaceGrid {
             && window.y_offset < self.workspace_height as i32
     }
 
+    pub fn determine_which_monitor_window_is_on(&self, window: &Window) -> Result<usize> {
+        let (x_offset, y_offset) = (window.x_offset, window.y_offset);
+
+        let mut monitor_index: i32 = -1;
+        let mut row_width = 0;
+
+        for column in &self.monitor_arrangement {
+            monitor_index += 1;
+            let mut column_height = -(WINDOW_DECORATION);
+            let mut greatest_row_width = 0;
+            let base_row_width = row_width;
+
+            for (row_index, monitor) in column.iter().enumerate() {
+                monitor_index += row_index as i32;
+
+                column_height += monitor.height as i32;
+
+                if monitor.width as i32 > greatest_row_width {
+                    greatest_row_width = monitor.width as i32;
+                    row_width = base_row_width + greatest_row_width;
+                }
+
+                if x_offset < row_width && y_offset < column_height {
+                    return Ok(monitor_index as usize);
+                }
+            }
+        }
+
+        Err(anyhow::anyhow!(
+            "Window is not on any monitor; position x {x_offset}, y {y_offset}"
+        ))
+    }
+
     fn calculate_workspace_size(monitor_arrangement: &MonitorArrangement) -> (usize, usize) {
         let mut workspace_width: usize = 0;
         let mut workspace_height: usize = 0;
@@ -178,6 +213,75 @@ mod tests {
 
             assert_eq!(workspace_width, 0);
             assert_eq!(workspace_height, 0);
+        }
+    }
+
+    mod determine_which_monitor_window_is_on {
+        use super::*;
+
+        fn create_window(x_offset: i32, y_offset: i32) -> Window {
+            // Only values that matter are the offsets; everything else can be arbitrary.
+            Window {
+                id: 1,
+                x_offset,
+                y_offset,
+                width: 1920,
+                height: 1056,
+                window_class: "chrome".to_string(),
+                title: "Chrome".to_string(),
+            }
+        }
+
+        #[test]
+        fn test_first_monitor() {
+            let window = create_window(0, 0);
+            let grid = WorkspaceGrid::new(0, 0);
+
+            assert_eq!(
+                grid.determine_which_monitor_window_is_on(&window).unwrap(),
+                0
+            );
+        }
+
+        #[test]
+        fn test_second_monitor() {
+            let window = create_window(0, 1500);
+            let grid = WorkspaceGrid::new(0, 0);
+
+            assert_eq!(
+                grid.determine_which_monitor_window_is_on(&window).unwrap(),
+                1
+            );
+        }
+
+        #[test]
+        fn test_third_monitor() {
+            let window = create_window(1920, 0);
+            let grid = WorkspaceGrid::new(0, 0);
+
+            assert_eq!(
+                grid.determine_which_monitor_window_is_on(&window).unwrap(),
+                2
+            );
+        }
+
+        #[test]
+        fn test_fourth_monitor() {
+            let window = create_window(5364, 0);
+            let grid = WorkspaceGrid::new(0, 0);
+
+            assert_eq!(
+                grid.determine_which_monitor_window_is_on(&window).unwrap(),
+                3
+            );
+        }
+
+        #[test]
+        fn test_invalid_monitor() {
+            let window = create_window(100000, 0);
+            let grid = WorkspaceGrid::new(0, 0);
+
+            assert!(grid.determine_which_monitor_window_is_on(&window).is_err());
         }
     }
 }
