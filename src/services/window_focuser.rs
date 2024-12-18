@@ -4,9 +4,6 @@ use std::collections::HashMap;
 use crate::external_tools::{wmctrl, xdotool, xrandr};
 use crate::models::{MonitorGrid, Window};
 
-// TODO: Derive this from monitor arrangement.
-const NUMBER_OF_MONITORS: i32 = 4;
-
 pub fn focus_by_direction(direction: &str) -> Result<()> {
     let monitor_grid = xrandr::get_monitor_grid()?;
     let windows = get_current_workspace_windows(&monitor_grid);
@@ -106,7 +103,9 @@ fn get_closest_window(
                     current_monitor_windows,
                     current_window_position,
                 ) {
-                    let mut left_monitor = next_monitor(current_monitor.try_into().unwrap(), -1);
+                    let mut left_monitor =
+                        grid.get_next_monitor(current_monitor.try_into().unwrap(), -1);
+
                     let mut optional_window =
                         get_window_from_monitor(&windows_by_monitor, left_monitor, -1);
 
@@ -116,7 +115,7 @@ fn get_closest_window(
                                 return Ok(Some(window.clone()));
                             }
                             None => {
-                                left_monitor = next_monitor(left_monitor, -1);
+                                left_monitor = grid.get_next_monitor(left_monitor, -1);
 
                                 optional_window =
                                     get_window_from_monitor(&windows_by_monitor, left_monitor, -1);
@@ -134,7 +133,9 @@ fn get_closest_window(
                     current_monitor_windows,
                     current_window_position,
                 ) {
-                    let mut left_monitor = next_monitor(current_monitor.try_into().unwrap(), 1);
+                    let mut left_monitor =
+                        grid.get_next_monitor(current_monitor.try_into().unwrap(), 1);
+
                     let mut optional_window =
                         get_window_from_monitor(&windows_by_monitor, left_monitor, 0);
 
@@ -144,7 +145,7 @@ fn get_closest_window(
                                 return Ok(Some(window.clone()));
                             }
                             None => {
-                                left_monitor = next_monitor(left_monitor, 1);
+                                left_monitor = grid.get_next_monitor(left_monitor, 1);
 
                                 optional_window =
                                     get_window_from_monitor(&windows_by_monitor, left_monitor, 0);
@@ -191,12 +192,4 @@ fn get_window_from_monitor<'a>(
     } else {
         None
     }
-}
-
-fn next_monitor(current_monitor: i32, direction: i32) -> i32 {
-    // Need to this song and dance to get the modulo behavior we want.
-    // Otherwise, we can get a negative remainder.
-    //
-    // Ref: https://stackoverflow.com/q/31210357
-    (((current_monitor + direction) % NUMBER_OF_MONITORS) + NUMBER_OF_MONITORS) % NUMBER_OF_MONITORS
 }

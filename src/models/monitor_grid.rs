@@ -12,6 +12,7 @@ const MONITOR_GRID: &[&[Monitor]] =
 
 pub struct MonitorGrid {
     monitors: Vec<Vec<Monitor>>,
+    monitors_count: i32,
     workspace_width: i32,
     workspace_height: i32,
 }
@@ -30,9 +31,11 @@ impl Default for MonitorGrid {
 impl MonitorGrid {
     pub fn new(monitors: Vec<Vec<Monitor>>) -> Self {
         let (workspace_width, workspace_height) = Self::calculate_workspace_size(&monitors);
+        let monitors_count = Self::calculate_monitor_count(&monitors);
 
         MonitorGrid {
             monitors,
+            monitors_count,
             workspace_width,
             workspace_height,
         }
@@ -86,6 +89,21 @@ impl MonitorGrid {
         Err(anyhow::anyhow!(
             "Window is not on any monitor; position x {x_offset}, y {y_offset}"
         ))
+    }
+
+    pub fn get_next_monitor(&self, current_monitor: i32, direction: i32) -> i32 {
+        // Need to do this "multiple module operations" song and dance to get the modulo behavior we want.
+        // Otherwise, we can get a negative remainder.
+        //
+        // Ref: https://stackoverflow.com/q/31210357
+        (((current_monitor + direction) % self.monitors_count) + self.monitors_count)
+            % self.monitors_count
+    }
+
+    fn calculate_monitor_count(monitors: &[Vec<Monitor>]) -> i32 {
+        monitors
+            .iter()
+            .fold(0, |acc, column| acc + column.len() as i32)
     }
 
     fn calculate_workspace_size(monitors: &Vec<Vec<Monitor>>) -> (i32, i32) {
