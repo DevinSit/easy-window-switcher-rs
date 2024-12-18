@@ -2,16 +2,16 @@ use anyhow::Result;
 use std::collections::HashMap;
 
 use crate::external_tools::{wmctrl, xdotool};
-use crate::models::{Window, WorkspaceGrid};
+use crate::models::{MonitorGrid, Window};
 
 // TODO: Derive this from monitor arrangement.
 const NUMBER_OF_MONITORS: i32 = 4;
 
 pub fn focus_by_direction(direction: &str) -> Result<()> {
-    let workspace_grid = wmctrl::get_workspace_config();
-    let windows = get_current_workspace_windows(&workspace_grid);
+    let monitor_grid = MonitorGrid::default();
+    let windows = get_current_workspace_windows(&monitor_grid);
 
-    if let Some(window_to_focus) = get_closest_window(&workspace_grid, &windows, direction)? {
+    if let Some(window_to_focus) = get_closest_window(&monitor_grid, &windows, direction)? {
         wmctrl::focus_window_by_id(window_to_focus.id);
     }
 
@@ -19,9 +19,9 @@ pub fn focus_by_direction(direction: &str) -> Result<()> {
 }
 
 pub fn focus_by_monitor_index(index: usize) -> Result<()> {
-    let workspace_grid = wmctrl::get_workspace_config();
-    let windows = get_current_workspace_windows(&workspace_grid);
-    let windows_by_monitor_index = index_windows_by_monitor(&workspace_grid, &windows)?;
+    let monitor_grid = MonitorGrid::default();
+    let windows = get_current_workspace_windows(&monitor_grid);
+    let windows_by_monitor_index = index_windows_by_monitor(&monitor_grid, &windows)?;
 
     if windows_by_monitor_index.contains_key(&index) {
         wmctrl::focus_window_by_id(windows_by_monitor_index[&index][0].id);
@@ -30,10 +30,10 @@ pub fn focus_by_monitor_index(index: usize) -> Result<()> {
     Ok(())
 }
 
-fn get_current_workspace_windows(workspace_grid: &WorkspaceGrid) -> Vec<Window> {
+fn get_current_workspace_windows(grid: &MonitorGrid) -> Vec<Window> {
     let mut current_workspace_windows = wmctrl::get_windows_config()
         .into_iter()
-        .filter(|window| workspace_grid.is_window_in_current_workspace(window))
+        .filter(|window| grid.is_window_in_current_workspace(window))
         .collect::<Vec<Window>>();
 
     // Sort by the x-offset to make sure the Windows are in order from left to right.
@@ -43,7 +43,7 @@ fn get_current_workspace_windows(workspace_grid: &WorkspaceGrid) -> Vec<Window> 
 }
 
 fn index_windows_by_monitor<'a>(
-    grid: &WorkspaceGrid,
+    grid: &MonitorGrid,
     windows: &'a Vec<Window>,
 ) -> Result<HashMap<usize, Vec<&'a Window>>> {
     let mut windows_by_monitor_index: HashMap<usize, Vec<&Window>> = HashMap::new();
@@ -61,7 +61,7 @@ fn index_windows_by_monitor<'a>(
 }
 
 fn index_monitors_by_window(
-    grid: &WorkspaceGrid,
+    grid: &MonitorGrid,
     windows: &Vec<Window>,
 ) -> Result<HashMap<usize, usize>> {
     let mut monitors_by_window: HashMap<usize, usize> = HashMap::new();
@@ -82,12 +82,12 @@ fn get_current_monitor(monitors_by_window: HashMap<usize, usize>) -> usize {
 }
 
 fn get_closest_window(
-    workspace_grid: &WorkspaceGrid,
+    grid: &MonitorGrid,
     windows: &Vec<Window>,
     direction: &str,
 ) -> Result<Option<Window>> {
-    let windows_by_monitor = index_windows_by_monitor(workspace_grid, windows)?;
-    let monitors_by_window = index_monitors_by_window(workspace_grid, windows)?;
+    let windows_by_monitor = index_windows_by_monitor(grid, windows)?;
+    let monitors_by_window = index_monitors_by_window(grid, windows)?;
 
     let current_monitor = get_current_monitor(monitors_by_window);
     let current_monitor_windows = &windows_by_monitor[&current_monitor];

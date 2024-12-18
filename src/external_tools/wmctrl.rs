@@ -1,10 +1,5 @@
 use super::utils::{call_command, get_command_output};
-use crate::models::{Window, WorkspaceGrid};
-
-pub fn get_workspace_config() -> WorkspaceGrid {
-    let workspace_config = get_command_output(&["wmctrl", "-d"]);
-    parse_workspace_config(&workspace_config)
-}
+use crate::models::Window;
 
 pub fn get_windows_config() -> Vec<Window> {
     let windows_config = get_command_output(&["wmctrl", "-l", "-G", "-x"]);
@@ -13,17 +8,6 @@ pub fn get_windows_config() -> Vec<Window> {
 
 pub fn focus_window_by_id(window_id: usize) {
     call_command(&["wmctrl", "-i", "-a", &window_id.to_string()]);
-}
-
-fn parse_workspace_config(system_config: &str) -> WorkspaceGrid {
-    let first_splits = system_config
-        .split("DG:")
-        .nth(1)
-        .unwrap()
-        .split("VP:")
-        .collect::<Vec<&str>>();
-
-    WorkspaceGrid::from_string_dimensions(first_splits[0])
 }
 
 fn parse_windows_config(windows_config: &str) -> Vec<Window> {
@@ -51,27 +35,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get_workspace_config() {
-        let grid = get_workspace_config();
-
-        assert!(grid.width > 0);
-        assert!(grid.height > 0);
-    }
-
-    #[test]
     fn test_get_windows_config() {
         let windows = get_windows_config();
 
         assert!(!windows.is_empty());
-    }
-
-    #[test]
-    fn test_parse_workspace_config() {
-        let workspace_config = "0  * DG: 20400x7680  VP: 6800,0  WA: 0,24 6800x2536  N/A";
-        let grid = parse_workspace_config(workspace_config);
-
-        assert_eq!(grid.width, 20400);
-        assert_eq!(grid.height, 7680);
     }
 
     #[test]

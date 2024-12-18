@@ -3,7 +3,7 @@ use anyhow::Result;
 /// The height of the window decoration that is constant in Ubuntu.
 pub const WINDOW_DECORATION: i32 = 24;
 
-/// Models the attributes of a single window (on a monitor, in a Workspace, in the WorkspaceGrid).
+/// Models the attributes of a single window (on a Monitor).
 /// Specifically, it cares about things like where the window is positioned relative to the current
 /// Workspace (i.e. x and y offset) as well as the ID/title of the window.
 ///
