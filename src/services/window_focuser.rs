@@ -1,14 +1,14 @@
 use anyhow::Result;
 use std::collections::HashMap;
 
-use crate::external_tools::{wmctrl, xdotool};
+use crate::external_tools::{wmctrl, xdotool, xrandr};
 use crate::models::{MonitorGrid, Window};
 
 // TODO: Derive this from monitor arrangement.
 const NUMBER_OF_MONITORS: i32 = 4;
 
 pub fn focus_by_direction(direction: &str) -> Result<()> {
-    let monitor_grid = MonitorGrid::default();
+    let monitor_grid = xrandr::get_monitor_grid()?;
     let windows = get_current_workspace_windows(&monitor_grid);
 
     if let Some(window_to_focus) = get_closest_window(&monitor_grid, &windows, direction)? {
@@ -19,7 +19,7 @@ pub fn focus_by_direction(direction: &str) -> Result<()> {
 }
 
 pub fn focus_by_monitor_index(index: usize) -> Result<()> {
-    let monitor_grid = MonitorGrid::default();
+    let monitor_grid = xrandr::get_monitor_grid()?;
     let windows = get_current_workspace_windows(&monitor_grid);
     let windows_by_monitor_index = index_windows_by_monitor(&monitor_grid, &windows)?;
 
