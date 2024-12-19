@@ -86,6 +86,17 @@ fn get_current_monitor(
     monitors_by_window[current_window_id].clone()
 }
 
+/// Finds the closest window to the current window based on the specified focus direction.
+///
+/// # Parameters
+/// - `current_window_id`: The ID of the currently focused window.
+/// - `monitor_grid`: A reference to the monitor grid containing all monitors and their respective windows.
+/// - `windows`: A vector of references to all windows.
+/// - `focus_direction`: The direction in which to search for the closest window.
+///
+/// # Returns
+/// - If a valid window is found, it returns an `Option<&Window>`.
+/// - If no valid window is found (e.g., if there are no windows or the current window does not exist), it returns `None`.
 fn find_closest_window(
     current_window_id: &WindowId,
     monitor_grid: &MonitorGrid,
@@ -184,6 +195,131 @@ fn find_next_monitor_window<'a>(
 mod tests {
     use super::*;
     use std::collections::HashMap;
+
+    mod find_closest_window {
+        use super::*;
+        use crate::models::Monitor;
+
+        fn create_mock_windows() -> Vec<Window> {
+            // Note: Windows are deliberately not in order by ID so that they can be tested for proper ordering.
+            // The proper order is the order of the IDs.
+            vec![
+                Window {
+                    id: WindowId(5),
+                    x_offset: 5360,
+                    y_offset: 0,
+                    width: 30,
+                    height: 40,
+                    window_class: "class1".to_string(),
+                    title: "title1".to_string(),
+                },
+                Window {
+                    id: WindowId(3),
+                    x_offset: 1920,
+                    y_offset: 0,
+                    width: 30,
+                    height: 40,
+                    window_class: "class1".to_string(),
+                    title: "title1".to_string(),
+                },
+                Window {
+                    id: WindowId(1),
+                    x_offset: 0,
+                    y_offset: 0,
+                    width: 10,
+                    height: 10,
+                    window_class: "class1".to_string(),
+                    title: "title1".to_string(),
+                },
+                Window {
+                    id: WindowId(2),
+                    x_offset: 0,
+                    y_offset: 1080,
+                    width: 70,
+                    height: 80,
+                    window_class: "class2".to_string(),
+                    title: "title2".to_string(),
+                },
+                Window {
+                    id: WindowId(4),
+                    x_offset: 3000,
+                    y_offset: 0,
+                    width: 70,
+                    height: 80,
+                    window_class: "class2".to_string(),
+                    title: "title2".to_string(),
+                },
+                Window {
+                    id: WindowId(6),
+                    x_offset: 5360,
+                    y_offset: 1200,
+                    width: 70,
+                    height: 80,
+                    window_class: "class2".to_string(),
+                    title: "title2".to_string(),
+                },
+            ]
+        }
+
+        fn create_mock_monitor_grid() -> MonitorGrid {
+            MonitorGrid(vec![
+                vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
+                vec![Monitor::new(3440, 1440)],
+                vec![Monitor::new(1440, 2560)],
+            ])
+        }
+
+        fn get_result(window_id: usize, direction: FocusDirection) -> WindowId {
+            let windows = create_mock_windows();
+            let monitor_grid = create_mock_monitor_grid();
+            let current_window_id = WindowId(window_id);
+
+            find_closest_window(&current_window_id, &monitor_grid, &windows, &direction)
+                .unwrap()
+                .unwrap()
+                .id
+        }
+
+        #[test]
+        fn test_left_same_monitor() {
+            assert_eq!(get_result(4, FocusDirection::Left), WindowId(3));
+        }
+
+        #[test]
+        fn test_right_same_monitor() {
+            assert_eq!(get_result(3, FocusDirection::Right), WindowId(4));
+        }
+
+        #[test]
+        fn test_left_window() {
+            assert_eq!(get_result(3, FocusDirection::Left), WindowId(2));
+        }
+
+        #[test]
+        fn test_right_window() {
+            assert_eq!(get_result(4, FocusDirection::Right), WindowId(5));
+        }
+
+        #[test]
+        fn test_wrap_left() {
+            assert_eq!(get_result(1, FocusDirection::Left), WindowId(6));
+        }
+
+        #[test]
+        fn test_wrap_right() {
+            assert_eq!(get_result(6, FocusDirection::Right), WindowId(1));
+        }
+
+        #[test]
+        fn test_above_same_monitor() {
+            assert_eq!(get_result(6, FocusDirection::Left), WindowId(5));
+        }
+
+        #[test]
+        fn test_below_same_monitor() {
+            assert_eq!(get_result(5, FocusDirection::Right), WindowId(6));
+        }
+    }
 
     mod is_closest_window_not_on_current_monitor {
         use super::*;
