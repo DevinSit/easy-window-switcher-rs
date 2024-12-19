@@ -140,16 +140,22 @@ fn find_closest_window(
     }
 }
 
+/// Given the windows of the current monitor, and the direction we want to focus to,
+/// determines if we need to look at another monitor to find the correct window to focus to.
+///
+/// That is, if we're already at the leftmost/rightmost window, we need to look at the next
+/// monitor to find the window to focus on.
 fn is_closest_window_not_on_current_monitor(
     direction: &FocusDirection,
     current_monitor_windows: &[&Window],
     current_window_position: usize,
 ) -> bool {
-    match direction {
-        FocusDirection::Left => current_monitor_windows.len() == 1 || current_window_position == 0,
-        FocusDirection::Right => {
-            current_monitor_windows.len() == 1
-                || current_window_position == current_monitor_windows.len() - 1
+    if current_monitor_windows.len() == 1 {
+        true
+    } else {
+        match direction {
+            FocusDirection::Left => current_window_position == 0,
+            FocusDirection::Right => current_window_position == current_monitor_windows.len() - 1,
         }
     }
 }
@@ -177,10 +183,102 @@ fn find_next_monitor_window<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
+
+    mod is_closest_window_not_on_current_monitor {
+        use super::*;
+
+        fn create_mock_windows() -> Vec<Window> {
+            let window1 = Window {
+                id: WindowId(1),
+                x_offset: 10,
+                y_offset: 20,
+                width: 30,
+                height: 40,
+                window_class: "class1".to_string(),
+                title: "title1".to_string(),
+            };
+
+            let window2 = Window {
+                id: WindowId(2),
+                x_offset: 50,
+                y_offset: 60,
+                width: 70,
+                height: 80,
+                window_class: "class2".to_string(),
+                title: "title2".to_string(),
+            };
+
+            vec![window1, window2]
+        }
+
+        #[test]
+        fn test_left_true() {
+            let windows = create_mock_windows();
+            let window_refs: Vec<&Window> = windows.iter().collect();
+
+            let result =
+                is_closest_window_not_on_current_monitor(&FocusDirection::Left, &window_refs, 0);
+
+            assert!(result);
+        }
+
+        #[test]
+        fn test_left_false() {
+            let windows = create_mock_windows();
+            let window_refs: Vec<&Window> = windows.iter().collect();
+
+            let result =
+                is_closest_window_not_on_current_monitor(&FocusDirection::Left, &window_refs, 1);
+
+            assert!(!result);
+        }
+
+        #[test]
+        fn test_right_true() {
+            let windows = create_mock_windows();
+            let window_refs: Vec<&Window> = windows.iter().collect();
+
+            let result =
+                is_closest_window_not_on_current_monitor(&FocusDirection::Right, &window_refs, 1);
+
+            assert!(result);
+        }
+
+        #[test]
+        fn test_right_false() {
+            let windows = create_mock_windows();
+            let window_refs: Vec<&Window> = windows.iter().collect();
+
+            let result =
+                is_closest_window_not_on_current_monitor(&FocusDirection::Right, &window_refs, 0);
+
+            assert!(!result);
+        }
+
+        #[test]
+        fn test_one_window() {
+            let mut windows = create_mock_windows();
+            windows.truncate(1);
+
+            let window_refs: Vec<&Window> = windows.iter().collect();
+
+            assert!(is_closest_window_not_on_current_monitor(
+                &FocusDirection::Left,
+                &window_refs,
+                1
+            ));
+
+            assert!(is_closest_window_not_on_current_monitor(
+                &FocusDirection::Right,
+                &window_refs,
+                0
+            ));
+        }
+    }
 
     mod find_next_monitor_window {
         use super::*;
-        use std::{collections::HashMap, vec};
 
         fn create_mock_windows() -> Vec<Window> {
             let window1 = Window {
