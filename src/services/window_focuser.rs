@@ -9,7 +9,7 @@ pub fn focus_by_direction(direction: FocusDirection) -> Result<()> {
     let windows = get_current_workspace_windows(&workspace);
     let current_window_id = xdotool::get_current_focused_window_id();
 
-    if let Some(window_to_focus) = get_closest_window(
+    if let Some(window_to_focus) = find_closest_window(
         &current_window_id,
         &workspace.monitor_grid,
         &windows,
@@ -86,7 +86,7 @@ fn get_current_monitor(
     monitors_by_window[current_window_id].clone()
 }
 
-fn get_closest_window(
+fn find_closest_window(
     current_window_id: &WindowId,
     monitor_grid: &MonitorGrid,
     windows: &Vec<Window>,
@@ -114,7 +114,7 @@ fn get_closest_window(
             let mut next_monitor = monitor_grid.get_next_monitor(&current_monitor, direction);
 
             let mut optional_window =
-                get_window_from_monitor(&windows_by_monitor, &next_monitor, direction);
+                find_next_window_on_monitor(&windows_by_monitor, &next_monitor, direction);
 
             loop {
                 match optional_window {
@@ -124,8 +124,11 @@ fn get_closest_window(
                     None => {
                         next_monitor = monitor_grid.get_next_monitor(&next_monitor, direction);
 
-                        optional_window =
-                            get_window_from_monitor(&windows_by_monitor, &next_monitor, direction);
+                        optional_window = find_next_window_on_monitor(
+                            &windows_by_monitor,
+                            &next_monitor,
+                            direction,
+                        );
                     }
                 }
             }
@@ -154,7 +157,7 @@ fn is_closest_window_not_on_current_monitor(
     }
 }
 
-fn get_window_from_monitor<'a>(
+fn find_next_window_on_monitor<'a>(
     windows_by_monitor: &'a HashMap<MonitorIndex, Vec<&'a Window>>,
     monitor: &MonitorIndex,
     direction: &FocusDirection,
