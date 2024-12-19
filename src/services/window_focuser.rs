@@ -114,7 +114,7 @@ fn find_closest_window(
             let mut next_monitor = monitor_grid.get_next_monitor(&current_monitor, direction);
 
             let mut optional_window =
-                find_next_window_on_monitor(&windows_by_monitor, &next_monitor, direction);
+                find_next_monitor_window(&windows_by_monitor, &next_monitor, direction);
 
             loop {
                 match optional_window {
@@ -124,11 +124,8 @@ fn find_closest_window(
                     None => {
                         next_monitor = monitor_grid.get_next_monitor(&next_monitor, direction);
 
-                        optional_window = find_next_window_on_monitor(
-                            &windows_by_monitor,
-                            &next_monitor,
-                            direction,
-                        );
+                        optional_window =
+                            find_next_monitor_window(&windows_by_monitor, &next_monitor, direction);
                     }
                 }
             }
@@ -157,7 +154,12 @@ fn is_closest_window_not_on_current_monitor(
     }
 }
 
-fn find_next_window_on_monitor<'a>(
+/// Used to "find the next monitor's window", using the focus direction as a signal for which side
+/// of a monitor's windows to focus to.
+///
+/// That is, if switching to the left monitor, take the farthest right (i.e. last) window on the monitor.
+/// If switching to the right monitor, take the farthest left (i.e. first) window on the monitor.
+fn find_next_monitor_window<'a>(
     windows_by_monitor: &'a HashMap<MonitorIndex, Vec<&'a Window>>,
     monitor: &MonitorIndex,
     direction: &FocusDirection,
@@ -169,5 +171,122 @@ fn find_next_window_on_monitor<'a>(
         }
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod find_next_monitor_window {
+        use super::*;
+        use std::{collections::HashMap, vec};
+
+        fn create_mock_windows() -> Vec<Window> {
+            let window1 = Window {
+                id: WindowId(1),
+                x_offset: 10,
+                y_offset: 20,
+                width: 30,
+                height: 40,
+                window_class: "class1".to_string(),
+                title: "title1".to_string(),
+            };
+
+            let window2 = Window {
+                id: WindowId(2),
+                x_offset: 50,
+                y_offset: 60,
+                width: 70,
+                height: 80,
+                window_class: "class2".to_string(),
+                title: "title2".to_string(),
+            };
+
+            vec![window1, window2]
+        }
+
+        fn create_mock_index(
+            windows: &[Window],
+        ) -> (HashMap<MonitorIndex, Vec<&Window>>, MonitorIndex) {
+            let mut windows_by_monitor: HashMap<MonitorIndex, Vec<&Window>> = HashMap::new();
+
+            let monitor_index = MonitorIndex(0);
+            windows_by_monitor.insert(monitor_index.clone(), vec![&windows[0], &windows[1]]);
+
+            (windows_by_monitor, monitor_index)
+        }
+
+        #[test]
+        fn test_left_monitor() {
+            let windows = create_mock_windows();
+            let (windows_by_monitor, monitor_index) = create_mock_index(&windows);
+
+            let result = find_next_monitor_window(
+                &windows_by_monitor,
+                &monitor_index,
+                &FocusDirection::Left,
+            )
+            .unwrap();
+
+            assert_eq!(result.id, WindowId(2));
+        }
+
+        #[test]
+        fn test_right_monitor() {
+            let windows = create_mock_windows();
+            let (windows_by_monitor, monitor_index) = create_mock_index(&windows);
+
+            let result = find_next_monitor_window(
+                &windows_by_monitor,
+                &monitor_index,
+                &FocusDirection::Right,
+            )
+            .unwrap();
+
+            assert_eq!(result.id, WindowId(1));
+        }
+
+        #[test]
+        fn test_one_window_monitor() {
+            let windows = create_mock_windows();
+            let (mut windows_by_monitor, monitor_index) = create_mock_index(&windows);
+
+            windows_by_monitor
+                .get_mut(&monitor_index)
+                .unwrap()
+                .truncate(1);
+
+            let result1 = find_next_monitor_window(
+                &windows_by_monitor,
+                &monitor_index,
+                &FocusDirection::Left,
+            )
+            .unwrap();
+
+            let result2 = find_next_monitor_window(
+                &windows_by_monitor,
+                &monitor_index,
+                &FocusDirection::Right,
+            )
+            .unwrap();
+
+            assert_eq!(result1.id, WindowId(1));
+            assert_eq!(result2.id, WindowId(1));
+        }
+
+        #[test]
+        fn test_no_windows() {
+            let windows_by_monitor = HashMap::new();
+            let monitor_index = MonitorIndex(0);
+
+            let result = find_next_monitor_window(
+                &windows_by_monitor,
+                &monitor_index,
+                &FocusDirection::Right,
+            );
+
+            assert!(result.is_none());
+        }
     }
 }
