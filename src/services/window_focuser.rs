@@ -51,7 +51,7 @@ fn index_windows_by_monitor<'a>(
         let monitor_index = monitor_grid.determine_which_monitor_window_is_on(window)?;
 
         windows_by_monitor_index
-            .entry(MonitorIndex(monitor_index))
+            .entry(monitor_index)
             .or_default()
             .push(window);
     }
@@ -68,7 +68,7 @@ fn index_monitors_by_window(
     for window in windows {
         monitors_by_window.insert(
             window.id.clone(),
-            MonitorIndex(monitor_grid.determine_which_monitor_window_is_on(window)?),
+            monitor_grid.determine_which_monitor_window_is_on(window)?,
         );
     }
 

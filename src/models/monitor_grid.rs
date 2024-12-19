@@ -22,7 +22,7 @@ impl MonitorGrid {
         )
     }
 
-    pub fn determine_which_monitor_window_is_on(&self, window: &Window) -> Result<usize> {
+    pub fn determine_which_monitor_window_is_on(&self, window: &Window) -> Result<MonitorIndex> {
         let (x_offset, y_offset) = (window.x_offset, window.y_offset);
 
         let mut monitor_index: i32 = -1;
@@ -46,7 +46,7 @@ impl MonitorGrid {
                 }
 
                 if x_offset < row_width && y_offset < column_height {
-                    return Ok(monitor_index as usize);
+                    return Ok(MonitorIndex(monitor_index as usize));
                 }
             }
         }
@@ -100,7 +100,7 @@ mod tests {
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
-                0
+                MonitorIndex(0)
             );
         }
 
@@ -111,7 +111,7 @@ mod tests {
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
-                1
+                MonitorIndex(1)
             );
         }
 
@@ -122,7 +122,7 @@ mod tests {
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
-                2
+                MonitorIndex(2)
             );
         }
 
@@ -133,7 +133,7 @@ mod tests {
 
             assert_eq!(
                 grid.determine_which_monitor_window_is_on(&window).unwrap(),
-                3
+                MonitorIndex(3)
             );
         }
 
