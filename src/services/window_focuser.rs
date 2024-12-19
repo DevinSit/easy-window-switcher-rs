@@ -7,10 +7,14 @@ use crate::models::{FocusDirection, MonitorGrid, MonitorIndex, Window, WindowId,
 pub fn focus_by_direction(direction: FocusDirection) -> Result<()> {
     let workspace = xrandr::parse_workspace()?;
     let windows = get_current_workspace_windows(&workspace);
+    let current_window_id = xdotool::get_current_focused_window_id();
 
-    if let Some(window_to_focus) =
-        get_closest_window(&workspace.monitor_grid, &windows, &direction)?
-    {
+    if let Some(window_to_focus) = get_closest_window(
+        &current_window_id,
+        &workspace.monitor_grid,
+        &windows,
+        &direction,
+    )? {
         wmctrl::focus_window_by_id(&window_to_focus.id);
     }
 
@@ -75,11 +79,15 @@ fn index_monitors_by_window(
     Ok(monitors_by_window)
 }
 
-fn get_current_monitor(monitors_by_window: &HashMap<WindowId, MonitorIndex>) -> MonitorIndex {
-    monitors_by_window[&xdotool::get_current_focused_window_id()].clone()
+fn get_current_monitor(
+    current_window_id: &WindowId,
+    monitors_by_window: &HashMap<WindowId, MonitorIndex>,
+) -> MonitorIndex {
+    monitors_by_window[current_window_id].clone()
 }
 
 fn get_closest_window(
+    current_window_id: &WindowId,
     monitor_grid: &MonitorGrid,
     windows: &Vec<Window>,
     direction: &FocusDirection,
@@ -91,12 +99,12 @@ fn get_closest_window(
     let windows_by_monitor = index_windows_by_monitor(monitor_grid, windows)?;
     let monitors_by_window = index_monitors_by_window(monitor_grid, windows)?;
 
-    let current_monitor = get_current_monitor(&monitors_by_window);
+    let current_monitor = get_current_monitor(current_window_id, &monitors_by_window);
     let current_monitor_windows = &windows_by_monitor[&current_monitor];
 
     if let Some(current_window_position) = current_monitor_windows
         .iter()
-        .position(|w| w.id == xdotool::get_current_focused_window_id())
+        .position(|w| w.id == *current_window_id)
     {
         if is_closest_window_not_on_current_monitor(
             direction,
