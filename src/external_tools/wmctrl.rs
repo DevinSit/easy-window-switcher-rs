@@ -1,5 +1,12 @@
-use super::utils::{call_command, get_command_output};
+use super::utils::{call_command, get_command_output, is_tool_installed};
 use crate::models::{Window, WindowId};
+
+pub fn check_if_installed() {
+    if !is_tool_installed("wmctrl") {
+        eprintln!("Error: wmctrl is not installed; please install it first through your e.g. package manager");
+        std::process::exit(1);
+    }
+}
 
 pub fn get_windows_config() -> Vec<Window> {
     let windows_config = get_command_output(&["wmctrl", "-l", "-G", "-x"]);

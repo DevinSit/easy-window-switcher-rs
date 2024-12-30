@@ -3,10 +3,17 @@ use std::collections::BTreeMap;
 
 use crate::models::{Monitor, MonitorGrid, Workspace};
 
-use super::utils::get_command_output;
+use super::utils::{get_command_output, is_tool_installed};
 
 type MonitorConfig = String;
 type ParsedMonitorConfig = (String, i32, i32); // (dimensions, x_offset, y_offset)
+
+pub fn check_if_installed() {
+    if !is_tool_installed("xrandr") {
+        eprintln!("Error: xrandr is not installed; please install it first through your e.g. package manager");
+        std::process::exit(1);
+    }
+}
 
 pub fn parse_workspace() -> Result<Workspace> {
     let raw_monitors = get_raw_monitors_config();

@@ -1,5 +1,12 @@
-use super::utils::get_command_output;
+use super::utils::{get_command_output, is_tool_installed};
 use crate::models::WindowId;
+
+pub fn check_if_installed() {
+    if !is_tool_installed("xdotool") {
+        eprintln!("Error: xdotool is not installed; please install it first through your e.g. package manager");
+        std::process::exit(1);
+    }
+}
 
 pub fn get_current_focused_window_id() -> WindowId {
     let output = get_command_output(&["xdotool", "getwindowfocus"])
