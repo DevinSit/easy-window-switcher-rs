@@ -22,37 +22,65 @@ impl MonitorGrid {
         )
     }
 
+    /// Given a window (with its position via the x and y offsets), determines which monitor it is on within the grid.
+    ///
+    /// The algorithm intuitively works follows: for each monitor, check if the window's x/y offsets shows that it's within the bounds of the monitor's size.
+    /// Calculate this by accumulating the width of all previous monitors as each column is checked, and similarly with the height of all previous monitors as each column is checked.
     pub fn determine_which_monitor_window_is_on(&self, window: &Window) -> Result<MonitorIndex> {
-        let (x_offset, y_offset) = (window.x_offset, window.y_offset);
-
+        // This is the index of the monitor that the monitor is on (0-indexed).
+        // Start it at negative one since each loop through the monitors will increment it by one.
         let mut monitor_index: i32 = -1;
-        let mut row_width = 0;
+
+        // This is the accumulated current x position after processing each monitor.
+        // Each column of monitors will have its width added to this (the widest monitor of each column only).
+        let mut x_position = 0;
 
         for column in &self.0 {
             monitor_index += 1;
 
-            let mut column_height = -(WINDOW_DECORATION);
-            let mut greatest_row_width = 0;
-            let base_row_width = row_width;
+            // This is the accumulated current y position after processing each monitor in the current column.
+            // Because of how the grid is represented (rows then columns), this value only needs to be accumulated once per column.
+            //
+            // Start it with negative WINDOW_DECORATION so that we don't have to subtract it out later.
+            let mut y_position = -(WINDOW_DECORATION);
+
+            // Tracks which monitors in the current column has the greatest width, so that we can calculate x_position for the next column correctly.
+            let mut greatest_column_width = 0;
+
+            // Tracks the x_position coming into the column to use as a base for calculations within the column.
+            let base_x_position = x_position;
 
             for (row_index, monitor) in column.iter().enumerate() {
+                // Add the current row in the column to the index.
+                //
+                // Note: Adding 0 for the first index in a column is intentional, since it's handled by the increment that happens in the column loop above.
                 monitor_index += row_index as i32;
 
-                column_height += monitor.height;
+                // Accumulate the current column's y position based on the monitor's height.
+                y_position += monitor.height;
 
-                if monitor.width > greatest_row_width {
-                    greatest_row_width = monitor.width;
-                    row_width = base_row_width + greatest_row_width;
+                if monitor.width > greatest_column_width {
+                    // Update the greatest width if the current monitor is wider than the last one in the column.
+                    greatest_column_width = monitor.width;
+
+                    // Also update the overall x_position based on the new greatest width.
+                    x_position = base_x_position + greatest_column_width;
                 }
 
-                if x_offset < row_width && y_offset < column_height {
+                // Check if the window is on the monitor by comparing the x/y positions of the monitor with the x/y offsets of the window.
+                //
+                // Note that the "less than" checks only work here because of how we're accumulating the positions of the monitors by checking
+                // each monitor _in order_. If we weren't doing it in order, we wouldn't be able to ignore previous monitors.
+                if window.x_offset < x_position && window.y_offset < y_position {
                     return Ok(MonitorIndex(monitor_index as usize));
                 }
             }
         }
 
         Err(anyhow::anyhow!(
-            "Window is not on any monitor; position x {x_offset}, y {y_offset}"
+            "Window is not on any monitor; position x {}, y {}",
+            window.x_offset,
+            window.y_offset
         ))
     }
 
