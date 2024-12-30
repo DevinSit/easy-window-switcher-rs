@@ -70,7 +70,8 @@ impl MonitorGrid {
                 // Check if the window is on the monitor by comparing the x/y positions of the monitor with the x/y offsets of the window.
                 //
                 // Note that the "less than" checks only work here because of how we're accumulating the positions of the monitors by checking
-                // each monitor _in order_. If we weren't doing it in order, we wouldn't be able to ignore previous monitors.
+                // each monitor _in order_. If we weren't doing it in order, we wouldn't be able to ignore previous monitors and would have to
+                // do a bounds check based on each monitor's dimensions.
                 if window.x_offset < x_position && window.y_offset < y_position {
                     return Ok(MonitorIndex(monitor_index as usize));
                 }
