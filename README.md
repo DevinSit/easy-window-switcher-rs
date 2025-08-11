@@ -1,4 +1,4 @@
-# Welcome to Easy Window Switcher!
+# Welcome to Easy Window Switcher (Rust edition)!
 
 `easy-window-switcher-rs` is a small Rust script/CLI for enabling X window users to more easily change focus between windows that are spread across multiple monitors.
 
