@@ -126,4 +126,139 @@ mod tests {
             assert_eq!(workspace_height, 0);
         }
     }
+
+    mod new {
+        use super::*;
+
+        #[test]
+        fn test_new() {
+            let monitor_grid = MonitorGrid(vec![
+                vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
+                vec![Monitor::new(3440, 1440)],
+            ]);
+
+            let workspace = Workspace::new(monitor_grid.clone());
+
+            assert_eq!(workspace.workspace_width, 1920 + 3440);
+            assert_eq!(workspace.workspace_height, 2160); // max of (1080+1080=2160, 1440)
+        }
+
+        #[test]
+        fn test_new_single_monitor() {
+            let monitor_grid = MonitorGrid(vec![vec![Monitor::new(2560, 1440)]]);
+            let workspace = Workspace::new(monitor_grid);
+
+            assert_eq!(workspace.workspace_width, 2560);
+            assert_eq!(workspace.workspace_height, 1440);
+        }
+
+        #[test]
+        fn test_new_empty_grid() {
+            let monitor_grid = MonitorGrid(vec![]);
+            let workspace = Workspace::new(monitor_grid);
+
+            assert_eq!(workspace.workspace_width, 0);
+            assert_eq!(workspace.workspace_height, 0);
+        }
+    }
+
+    mod is_window_in_current_workspace {
+        use super::*;
+        use crate::models::{Window, WindowId};
+
+        fn create_test_workspace() -> Workspace {
+            let monitor_grid = MonitorGrid(vec![
+                vec![Monitor::new(1920, 1080)],
+                vec![Monitor::new(1920, 1080)],
+            ]);
+            Workspace::new(monitor_grid)
+        }
+
+        fn create_test_window(x_offset: i32, y_offset: i32) -> Window {
+            Window {
+                id: WindowId(1),
+                x_offset,
+                y_offset,
+                width: 800,
+                height: 600,
+                window_class: "test".to_string(),
+                title: "Test Window".to_string(),
+            }
+        }
+
+        #[test]
+        fn test_window_in_workspace() {
+            let workspace = create_test_workspace();
+            let window = create_test_window(100, 100);
+
+            assert!(workspace.is_window_in_current_workspace(&window));
+        }
+
+        #[test]
+        fn test_window_at_origin() {
+            let workspace = create_test_workspace();
+            let window = create_test_window(0, 0);
+
+            assert!(workspace.is_window_in_current_workspace(&window));
+        }
+
+        #[test]
+        fn test_window_at_edge() {
+            let workspace = create_test_workspace();
+            // Workspace is 3840x1080 (1920+1920 x max(1080))
+            let window = create_test_window(3839, 1079);
+
+            assert!(workspace.is_window_in_current_workspace(&window));
+        }
+
+        #[test]
+        fn test_window_negative_x() {
+            let workspace = create_test_workspace();
+            let window = create_test_window(-1, 100);
+
+            assert!(!workspace.is_window_in_current_workspace(&window));
+        }
+
+        #[test]
+        fn test_window_negative_y() {
+            let workspace = create_test_workspace();
+            let window = create_test_window(100, -1);
+
+            assert!(!workspace.is_window_in_current_workspace(&window));
+        }
+
+        #[test]
+        fn test_window_exceeds_width() {
+            let workspace = create_test_workspace();
+            // Workspace width is 3840
+            let window = create_test_window(3840, 100);
+
+            assert!(!workspace.is_window_in_current_workspace(&window));
+        }
+
+        #[test]
+        fn test_window_exceeds_height() {
+            let workspace = create_test_workspace();
+            // Workspace height is 1080
+            let window = create_test_window(100, 1080);
+
+            assert!(!workspace.is_window_in_current_workspace(&window));
+        }
+
+        #[test]
+        fn test_window_far_outside() {
+            let workspace = create_test_workspace();
+            let window = create_test_window(10000, 10000);
+
+            assert!(!workspace.is_window_in_current_workspace(&window));
+        }
+
+        #[test]
+        fn test_window_negative_both() {
+            let workspace = create_test_workspace();
+            let window = create_test_window(-100, -100);
+
+            assert!(!workspace.is_window_in_current_workspace(&window));
+        }
+    }
 }

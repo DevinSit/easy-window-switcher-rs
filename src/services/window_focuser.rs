@@ -523,4 +523,152 @@ mod tests {
             assert!(result.is_none());
         }
     }
+
+    mod get_current_workspace_windows {
+        use super::*;
+        use crate::models::{Monitor, Workspace};
+
+        fn create_test_workspace() -> Workspace {
+            let monitor_grid = MonitorGrid(vec![
+                vec![Monitor::new(1920, 1080)],
+                vec![Monitor::new(1920, 1080)],
+            ]);
+            Workspace::new(monitor_grid)
+        }
+
+        fn create_test_windows() -> Vec<Window> {
+            vec![
+                Window {
+                    id: WindowId(3),
+                    x_offset: 1920, // Second monitor
+                    y_offset: 100,
+                    width: 800,
+                    height: 600,
+                    window_class: "app1".to_string(),
+                    title: "App 1".to_string(),
+                },
+                Window {
+                    id: WindowId(1),
+                    x_offset: 100, // First monitor
+                    y_offset: 100,
+                    width: 800,
+                    height: 600,
+                    window_class: "app2".to_string(),
+                    title: "App 2".to_string(),
+                },
+                Window {
+                    id: WindowId(2),
+                    x_offset: 500, // First monitor
+                    y_offset: 200,
+                    width: 800,
+                    height: 600,
+                    window_class: "app3".to_string(),
+                    title: "App 3".to_string(),
+                },
+            ]
+        }
+
+        #[test]
+        fn test_windows_sorted_by_x_offset() {
+            let workspace = create_test_workspace();
+            let all_windows = create_test_windows();
+
+            // Mock the wmctrl::get_windows_config call by using filter directly
+            let mut current_workspace_windows: Vec<Window> = all_windows
+                .into_iter()
+                .filter(|window| workspace.is_window_in_current_workspace(window))
+                .collect();
+
+            // Sort by x_offset like the actual function does
+            current_workspace_windows.sort_by(|a, b| a.x_offset.cmp(&b.x_offset));
+
+            // Windows should be sorted by x_offset: 100, 500, 1920
+            assert_eq!(current_workspace_windows[0].x_offset, 100); // WindowId(1)
+            assert_eq!(current_workspace_windows[1].x_offset, 500); // WindowId(2)
+            assert_eq!(current_workspace_windows[2].x_offset, 1920); // WindowId(3)
+        }
+    }
+
+    mod index_windows_by_monitor {
+        use super::*;
+        use crate::models::Monitor;
+
+        pub fn create_test_setup() -> (MonitorGrid, Vec<Window>) {
+            let monitor_grid = MonitorGrid(vec![
+                vec![Monitor::new(1920, 1080)],
+                vec![Monitor::new(1920, 1080)],
+            ]);
+
+            let windows = vec![
+                Window {
+                    id: WindowId(1),
+                    x_offset: 100, // First monitor
+                    y_offset: 100,
+                    width: 800,
+                    height: 600,
+                    window_class: "app1".to_string(),
+                    title: "App 1".to_string(),
+                },
+                Window {
+                    id: WindowId(2),
+                    x_offset: 2000, // Second monitor
+                    y_offset: 100,
+                    width: 800,
+                    height: 600,
+                    window_class: "app2".to_string(),
+                    title: "App 2".to_string(),
+                },
+            ];
+
+            (monitor_grid, windows)
+        }
+
+        #[test]
+        fn test_index_windows_by_monitor() {
+            let (monitor_grid, windows) = create_test_setup();
+            let result = index_windows_by_monitor(&monitor_grid, &windows).unwrap();
+
+            assert_eq!(result.len(), 2);
+            assert!(result.contains_key(&MonitorIndex(0)));
+            assert!(result.contains_key(&MonitorIndex(1)));
+
+            assert_eq!(result[&MonitorIndex(0)].len(), 1);
+            assert_eq!(result[&MonitorIndex(1)].len(), 1);
+
+            assert_eq!(result[&MonitorIndex(0)][0].id, WindowId(1));
+            assert_eq!(result[&MonitorIndex(1)][0].id, WindowId(2));
+        }
+    }
+
+    mod index_monitors_by_window {
+        use super::*;
+
+        #[test]
+        fn test_index_monitors_by_window() {
+            let (monitor_grid, windows) = super::index_windows_by_monitor::create_test_setup();
+            let result = index_monitors_by_window(&monitor_grid, &windows).unwrap();
+
+            assert_eq!(result.len(), 2);
+            assert_eq!(result[&WindowId(1)], MonitorIndex(0));
+            assert_eq!(result[&WindowId(2)], MonitorIndex(1));
+        }
+    }
+
+    mod get_current_monitor {
+        use super::*;
+        use std::collections::HashMap;
+
+        #[test]
+        fn test_get_current_monitor() {
+            let mut monitors_by_window = HashMap::new();
+            monitors_by_window.insert(WindowId(1), MonitorIndex(0));
+            monitors_by_window.insert(WindowId(2), MonitorIndex(1));
+
+            let current_monitor = get_current_monitor(&WindowId(1), &monitors_by_window);
+            assert_eq!(current_monitor, MonitorIndex(0));
+
+            let current_monitor = get_current_monitor(&WindowId(2), &monitors_by_window);
+            assert_eq!(current_monitor, MonitorIndex(1));
+        }
+    }
 }

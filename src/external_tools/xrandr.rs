@@ -133,4 +133,157 @@ mod tests {
             );
         }
     }
+
+    mod parse_monitor_config {
+        use super::*;
+
+        #[test]
+        fn test_parse_normal_monitor() {
+            let config = "DisplayPort-0 connected 3440x1440+1920+540 (normal left inverted right x axis y axis) 800mm x 337mm".to_string();
+            let result = parse_monitor_config(&config).unwrap();
+            assert_eq!(result, ("3440x1440".to_string(), 1920, 540));
+        }
+
+        #[test]
+        fn test_parse_primary_monitor() {
+            let config = "HDMI-A-0 connected primary 1920x1080+0+1080 (normal left inverted right x axis y axis) 527mm x 296mm".to_string();
+            let result = parse_monitor_config(&config).unwrap();
+            assert_eq!(result, ("1920x1080".to_string(), 0, 1080));
+        }
+
+        #[test]
+        fn test_parse_monitor_at_origin() {
+            let config = "DisplayPort-2 connected 1920x1080+0+0 (normal left inverted right x axis y axis) 527mm x 296mm".to_string();
+            let result = parse_monitor_config(&config).unwrap();
+            assert_eq!(result, ("1920x1080".to_string(), 0, 0));
+        }
+
+        #[test]
+        fn test_parse_monitor_large_offsets() {
+            let config = "DisplayPort-1 connected 1440x2560+5360+0 right (normal left inverted right x axis y axis) 597mm x 336mm".to_string();
+            let result = parse_monitor_config(&config).unwrap();
+            assert_eq!(result, ("1440x2560".to_string(), 5360, 0));
+        }
+
+        #[test]
+        fn test_parse_invalid_config_too_few_parts() {
+            let config = "DisplayPort-0 connected".to_string();
+            let result = parse_monitor_config(&config);
+            assert!(result.is_err());
+            assert!(result
+                .unwrap_err()
+                .to_string()
+                .contains("Invalid monitor config"));
+        }
+
+        #[test]
+        fn test_parse_invalid_config_bad_position() {
+            let config = "DisplayPort-0 connected badposition (normal left inverted right x axis y axis) 800mm x 337mm".to_string();
+            let result = parse_monitor_config(&config);
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_parse_invalid_config_missing_offsets() {
+            let config = "DisplayPort-0 connected 1920x1080+0 (normal left inverted right x axis y axis) 527mm x 296mm".to_string();
+            let result = parse_monitor_config(&config);
+            assert!(result.is_err());
+            assert!(result
+                .unwrap_err()
+                .to_string()
+                .contains("Invalid monitor config"));
+        }
+
+        #[test]
+        fn test_parse_invalid_config_non_numeric_offset() {
+            let config = "DisplayPort-0 connected 1920x1080+abc+0 (normal left inverted right x axis y axis) 527mm x 296mm".to_string();
+            let result = parse_monitor_config(&config);
+            assert!(result.is_err());
+        }
+    }
+
+    mod get_raw_monitors_config {
+        // Note: We can't easily test get_raw_monitors_config directly since it calls
+        // external xrandr command. This would require integration tests or mocking.
+        // For unit tests, we focus on the parsing logic which is tested above.
+    }
+
+    mod parse_workspace {
+        // Note: parse_workspace also calls external xrandr command, so it would
+        // need integration tests or mocking to test properly.
+    }
+
+    mod additional_parse_raw_monitors_config_tests {
+        use super::*;
+
+        #[test]
+        fn test_empty_monitor_config() {
+            let mock_config = vec![];
+            let monitor_grid = parse_raw_monitors_config(&mock_config).unwrap();
+            assert!(monitor_grid.is_empty());
+        }
+
+        #[test]
+        fn test_single_monitor() {
+            let mock_config = vec![
+                "DisplayPort-0 connected 1920x1080+0+0 (normal left inverted right x axis y axis) 527mm x 296mm".to_owned()
+            ];
+            let monitor_grid = parse_raw_monitors_config(&mock_config).unwrap();
+            assert_eq!(monitor_grid, vec![vec![Monitor::new(1920, 1080)]]);
+        }
+
+        #[test]
+        fn test_vertical_monitor_stack() {
+            let mock_config = vec![
+                "DisplayPort-0 connected 1920x1080+0+0 (normal left inverted right x axis y axis) 527mm x 296mm".to_owned(),
+                "DisplayPort-1 connected 1920x1080+0+1080 (normal left inverted right x axis y axis) 527mm x 296mm".to_owned()
+            ];
+            let monitor_grid = parse_raw_monitors_config(&mock_config).unwrap();
+            assert_eq!(
+                monitor_grid,
+                vec![vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)]]
+            );
+        }
+
+        #[test]
+        fn test_horizontal_monitor_layout() {
+            let mock_config = vec![
+                "DisplayPort-0 connected 1920x1080+0+0 (normal left inverted right x axis y axis) 527mm x 296mm".to_owned(),
+                "DisplayPort-1 connected 1920x1080+1920+0 (normal left inverted right x axis y axis) 527mm x 296mm".to_owned()
+            ];
+            let monitor_grid = parse_raw_monitors_config(&mock_config).unwrap();
+            assert_eq!(
+                monitor_grid,
+                vec![
+                    vec![Monitor::new(1920, 1080)],
+                    vec![Monitor::new(1920, 1080)]
+                ]
+            );
+        }
+
+        #[test]
+        fn test_mixed_resolution_monitors() {
+            let mock_config = vec![
+                "DisplayPort-0 connected 1920x1080+0+0 (normal left inverted right x axis y axis) 527mm x 296mm".to_owned(),
+                "DisplayPort-1 connected 2560x1440+1920+0 (normal left inverted right x axis y axis) 597mm x 336mm".to_owned()
+            ];
+            let monitor_grid = parse_raw_monitors_config(&mock_config).unwrap();
+            assert_eq!(
+                monitor_grid,
+                vec![
+                    vec![Monitor::new(1920, 1080)],
+                    vec![Monitor::new(2560, 1440)]
+                ]
+            );
+        }
+
+        #[test]
+        fn test_invalid_monitor_dimensions() {
+            let mock_config = vec![
+                "DisplayPort-0 connected invalidx1080+0+0 (normal left inverted right x axis y axis) 527mm x 296mm".to_owned()
+            ];
+            let result = parse_raw_monitors_config(&mock_config);
+            assert!(result.is_err());
+        }
+    }
 }

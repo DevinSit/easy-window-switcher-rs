@@ -128,6 +128,168 @@ impl std::fmt::Display for Window {
 mod tests {
     use super::*;
 
+    mod window_id {
+        use super::*;
+
+        #[test]
+        fn test_window_id_creation() {
+            let id = WindowId(123456);
+            assert_eq!(id.0, 123456);
+        }
+
+        #[test]
+        fn test_window_id_display() {
+            let id = WindowId(0x05000006);
+            assert_eq!(format!("{}", id), "83886086");
+        }
+
+        #[test]
+        fn test_window_id_equality() {
+            let id1 = WindowId(100);
+            let id2 = WindowId(100);
+            let id3 = WindowId(200);
+
+            assert_eq!(id1, id2);
+            assert_ne!(id1, id3);
+        }
+
+        #[test]
+        fn test_window_id_clone() {
+            let id1 = WindowId(42);
+            let id2 = id1.clone();
+            assert_eq!(id1.0, id2.0);
+        }
+    }
+
+    mod constants {
+        use super::*;
+
+        #[test]
+        fn test_window_decoration_constant() {
+            assert_eq!(WINDOW_DECORATION, 24);
+        }
+    }
+
+    mod parse_id {
+        use super::*;
+
+        #[test]
+        fn test_parse_valid_hex() {
+            let result = Window::parse_id("0x05000006").unwrap();
+            assert_eq!(result, WindowId(83886086));
+        }
+
+        #[test]
+        fn test_parse_valid_hex_lowercase() {
+            let result = Window::parse_id("0x05a0000b").unwrap();
+            assert_eq!(result, WindowId(94371851));
+        }
+
+        #[test]
+        fn test_parse_valid_hex_uppercase() {
+            let result = Window::parse_id("0x05A0000B").unwrap();
+            assert_eq!(result, WindowId(94371851));
+        }
+
+        #[test]
+        fn test_parse_invalid_hex_format() {
+            // This actually works because parse_id just strips "0x" if present
+            let result = Window::parse_id("05000006").unwrap();
+            assert_eq!(result, WindowId(83886086));
+        }
+
+        #[test]
+        fn test_parse_missing_hex_prefix_still_works() {
+            let result = Window::parse_id("ABC").unwrap();
+            assert_eq!(result, WindowId(2748)); // ABC in hex = 2748 in decimal
+        }
+
+        #[test]
+        fn test_parse_invalid_hex_characters() {
+            let result = Window::parse_id("0xGGGGGGGG");
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_parse_empty_string() {
+            let result = Window::parse_id("");
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_parse_malformed_prefix() {
+            let result = Window::parse_id("0X05000006");
+            assert!(result.is_err());
+        }
+    }
+
+    mod additional_from_raw_config_tests {
+        use super::*;
+
+        #[test]
+        fn test_from_raw_config_with_long_title() {
+            let raw_config = "0x05000006  0 1920 24   1920 1056 gnome-terminal-server.Gnome-terminal  devin-Desktop This is a very long window title with many words";
+            let window = Window::from_raw_config(raw_config).unwrap();
+            assert_eq!(
+                window.title,
+                "This is a very long window title with many words"
+            );
+        }
+
+        #[test]
+        fn test_from_raw_config_with_single_word_title() {
+            let raw_config = "0x05000006  0 1920 24   1920 1056 gnome-terminal-server.Gnome-terminal  devin-Desktop Terminal";
+            let window = Window::from_raw_config(raw_config).unwrap();
+            assert_eq!(window.title, "Terminal");
+        }
+
+        #[test]
+        fn test_from_raw_config_with_empty_title() {
+            let raw_config = "0x05000006  0 1920 24   1920 1056 gnome-terminal-server.Gnome-terminal  devin-Desktop";
+            let window = Window::from_raw_config(raw_config).unwrap();
+            assert_eq!(window.title, "");
+        }
+
+        #[test]
+        #[should_panic(expected = "index out of bounds")]
+        fn test_from_raw_config_too_few_parts() {
+            let raw_config = "0x05000006  0 1920";
+            let _result = Window::from_raw_config(raw_config);
+            // This will panic when trying to access split_config[3] because there are only 3 parts (indices 0,1,2)
+            // The function doesn't validate the input length before accessing array elements
+        }
+
+        #[test]
+        fn test_from_raw_config_invalid_id() {
+            let raw_config = "invalid_id  0 1920 24   1920 1056 gnome-terminal-server.Gnome-terminal  devin-Desktop Terminal";
+            let result = Window::from_raw_config(raw_config);
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_from_raw_config_invalid_numbers() {
+            let raw_config = "0x05000006  0 abc 24   1920 1056 gnome-terminal-server.Gnome-terminal  devin-Desktop Terminal";
+            let result = Window::from_raw_config(raw_config);
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_from_raw_config_negative_values() {
+            let raw_config = "0x05000006  0 -100 -50   1920 1056 gnome-terminal-server.Gnome-terminal  devin-Desktop Terminal";
+            let window = Window::from_raw_config(raw_config).unwrap();
+            assert_eq!(window.x_offset, -100);
+            assert_eq!(window.y_offset, -50);
+        }
+
+        #[test]
+        fn test_from_raw_config_zero_dimensions() {
+            let raw_config = "0x05000006  0 0 0   0 0 gnome-terminal-server.Gnome-terminal  devin-Desktop Terminal";
+            let window = Window::from_raw_config(raw_config).unwrap();
+            assert_eq!(window.width, 0);
+            assert_eq!(window.height, 0);
+        }
+    }
+
     #[test]
     fn test_window_creation() {
         let window = Window::new(

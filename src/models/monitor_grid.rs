@@ -2,6 +2,7 @@ use anyhow::Result;
 
 use super::{FocusDirection, Monitor, MonitorIndex, Window, WINDOW_DECORATION};
 
+#[derive(Clone)]
 pub struct MonitorGrid(pub Vec<Vec<Monitor>>);
 
 impl MonitorGrid {
@@ -172,6 +173,127 @@ mod tests {
             let grid = create_mock_grid();
 
             assert!(grid.determine_which_monitor_window_is_on(&window).is_err());
+        }
+    }
+
+    mod get_next_monitor {
+        use super::*;
+
+        fn create_mock_grid() -> MonitorGrid {
+            MonitorGrid(vec![
+                vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
+                vec![Monitor::new(3440, 1440)],
+                vec![Monitor::new(1440, 2560)],
+            ])
+        }
+
+        #[test]
+        fn test_next_monitor_right() {
+            let grid = create_mock_grid();
+            let current = MonitorIndex(0);
+            let next = grid.get_next_monitor(&current, &FocusDirection::Right);
+            assert_eq!(next, MonitorIndex(1));
+        }
+
+        #[test]
+        fn test_next_monitor_left() {
+            let grid = create_mock_grid();
+            let current = MonitorIndex(1);
+            let next = grid.get_next_monitor(&current, &FocusDirection::Left);
+            assert_eq!(next, MonitorIndex(0));
+        }
+
+        #[test]
+        fn test_wrap_around_right() {
+            let grid = create_mock_grid();
+            let current = MonitorIndex(3); // Last monitor
+            let next = grid.get_next_monitor(&current, &FocusDirection::Right);
+            assert_eq!(next, MonitorIndex(0)); // Should wrap to first
+        }
+
+        #[test]
+        fn test_wrap_around_left() {
+            let grid = create_mock_grid();
+            let current = MonitorIndex(0); // First monitor
+            let next = grid.get_next_monitor(&current, &FocusDirection::Left);
+            assert_eq!(next, MonitorIndex(3)); // Should wrap to last
+        }
+
+        #[test]
+        fn test_single_monitor() {
+            let grid = MonitorGrid(vec![vec![Monitor::new(1920, 1080)]]);
+            let current = MonitorIndex(0);
+            let next_right = grid.get_next_monitor(&current, &FocusDirection::Right);
+            let next_left = grid.get_next_monitor(&current, &FocusDirection::Left);
+
+            assert_eq!(next_right, MonitorIndex(0));
+            assert_eq!(next_left, MonitorIndex(0));
+        }
+
+        #[test]
+        fn test_middle_monitor_right() {
+            let grid = create_mock_grid();
+            let current = MonitorIndex(2);
+            let next = grid.get_next_monitor(&current, &FocusDirection::Right);
+            assert_eq!(next, MonitorIndex(3));
+        }
+
+        #[test]
+        fn test_middle_monitor_left() {
+            let grid = create_mock_grid();
+            let current = MonitorIndex(2);
+            let next = grid.get_next_monitor(&current, &FocusDirection::Left);
+            assert_eq!(next, MonitorIndex(1));
+        }
+    }
+
+    mod calculate_monitor_count {
+        use super::*;
+
+        #[test]
+        fn test_quad_monitor_setup() {
+            let grid = MonitorGrid(vec![
+                vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
+                vec![Monitor::new(3440, 1440)],
+                vec![Monitor::new(1440, 2560)],
+            ]);
+
+            assert_eq!(grid.calculate_monitor_count(), 4);
+        }
+
+        #[test]
+        fn test_single_monitor() {
+            let grid = MonitorGrid(vec![vec![Monitor::new(1920, 1080)]]);
+            assert_eq!(grid.calculate_monitor_count(), 1);
+        }
+
+        #[test]
+        fn test_empty_grid() {
+            let grid = MonitorGrid(vec![]);
+            assert_eq!(grid.calculate_monitor_count(), 0);
+        }
+
+        #[test]
+        fn test_multiple_columns_same_size() {
+            let grid = MonitorGrid(vec![
+                vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
+                vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
+                vec![Monitor::new(1920, 1080), Monitor::new(1920, 1080)],
+            ]);
+
+            assert_eq!(grid.calculate_monitor_count(), 6);
+        }
+
+        #[test]
+        fn test_single_column_multiple_monitors() {
+            let grid = MonitorGrid(vec![vec![
+                Monitor::new(1920, 1080),
+                Monitor::new(1920, 1080),
+                Monitor::new(1920, 1080),
+                Monitor::new(1920, 1080),
+            ]]);
+
+            assert_eq!(grid.calculate_monitor_count(), 4);
         }
     }
 }
